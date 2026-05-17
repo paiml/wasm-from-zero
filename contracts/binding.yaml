@@ -1,0 +1,36 @@
+# Contract → Rust binding manifest for wasm-from-zero.
+#
+# Each entry binds a YAML contract to one or more Rust crates in the
+# workspace. The demo binary listed under each crate is the runtime
+# proof: exiting zero with the contract marker on stderr is the
+# pairing assertion that complements `pv validate`.
+
+version: 1.0.0
+
+bindings:
+  wasm-rendering-v1:
+    description: Canvas-pillar contract — Canvas2D + DOM safety.
+    rust_crates:
+      - m1-canvas
+      - m1-app
+      - m4-bundle
+      - m4-tests
+    lean_module: WasmFromZero.Theorems.Canvas
+    runtime_marker: "contract: wasm-rendering-v1 holds — OK"
+
+  wasm-lifecycle-v1:
+    description: Elm-pillar contract — update totality, rAF scheduling, replay determinism.
+    rust_crates:
+      - m2-elm-wasm
+      - m2-events
+    lean_module: WasmFromZero.Theorems.Lifecycle
+    runtime_marker: "contract: wasm-lifecycle-v1 holds — OK"
+
+  wasm-panels-v1:
+    description: Compose-pillar contract — layout non-overlap, chart cursor, router totality.
+    rust_crates:
+      - m3-components
+      - m3-charts
+      - m5-dash
+    lean_module: WasmFromZero.Theorems.Panels
+    runtime_marker: "contract: wasm-panels-v1 holds — OK"

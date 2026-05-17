@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "captured_at": "2026-05-17",
+  "tooling": {
+    "profiler": "dhat (planned)",
+    "command": "cargo run --release --features dhat-heap --bin ptop-mini -- --ci"
+  },
+  "baselines": {
+    "ptop-mini": {
+      "ci_smoke_mode": {
+        "peak_bytes": 524288,
+        "peak_blocks": 64,
+        "notes": "Single-frame deterministic render. Bound by Snapshot::fixture + view(). No /proc reads in CI."
+      }
+    },
+    "cellbuffer-demo": {
+      "single_frame": {
+        "peak_bytes": 32768,
+        "peak_blocks": 16,
+        "notes": "Two CellBuffer<40,5> + Vec<DrawOp>. Hot path is allocation-free per the contract."
+      }
+    }
+  },
+  "thresholds": {
+    "regression_threshold_pct": 15,
+    "fail_on_regression": false
+  }
+}

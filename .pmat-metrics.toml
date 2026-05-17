@@ -1,0 +1,18 @@
+# PMAT quality thresholds for tui-from-zero
+# Read by `pmat comply check` (CB-130, CB-301).
+
+[thresholds]
+coverage_minimum = 95
+complexity_max = 10
+tdg_minimum_grade = "A"
+
+[reproducibility]
+# Bronze (lockfile + CI) is the baseline. Promote to Silver by adding
+# golden-trace baselines under .pmat-metrics/ once the demo binaries
+# stabilize past the course-recording iteration.
+target_level = "bronze"
+
+[code_search]
+# CLAUDE.md mandates pmat query over grep — pattern adoption is verified
+# in CB-130. This block is a hint for downstream tooling.
+preferred_tool = "pmat query"

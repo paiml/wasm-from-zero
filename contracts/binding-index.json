@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "description": "Mapping from YAML contracts to Rust crate bindings — the runtime half of each provable contract.",
+  "bindings": [
+    { "contract": "wasm-rendering-v1", "crate": "m1-canvas",     "binary": "canvas-demo" },
+    { "contract": "wasm-rendering-v1", "crate": "m1-app",        "binary": "app-demo" },
+    { "contract": "wasm-rendering-v1", "crate": "m4-bundle",     "binary": "bundle-demo" },
+    { "contract": "wasm-rendering-v1", "crate": "m4-tests",      "binary": "tests-demo" },
+    { "contract": "wasm-lifecycle-v1", "crate": "m2-elm-wasm",   "binary": "counter-demo" },
+    { "contract": "wasm-lifecycle-v1", "crate": "m2-events",     "binary": "events-demo" },
+    { "contract": "wasm-panels-v1",    "crate": "m3-components", "binary": "components-demo" },
+    { "contract": "wasm-panels-v1",    "crate": "m3-charts",     "binary": "charts-demo" },
+    { "contract": "wasm-panels-v1",    "crate": "m5-dash",       "binary": "dash" }
+  ]
+}
