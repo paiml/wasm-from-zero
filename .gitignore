@@ -1,0 +1,15 @@
+target/
+**/*.rs.bk
+.idea/
+.vscode/
+lean/.lake/
+lean/lake-manifest.json
+
+# Tool caches — local only
+.pmat/
+.pv/
+contracts/.pv/
+
+# WASM bundle output
+pkg/
+dist/

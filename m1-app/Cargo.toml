@@ -1,0 +1,26 @@
+[package]
+name = "m1-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "App::mount/unmount lifecycle (no panic on missing target)"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "app-demo"
+path = "src/main.rs"
+
+[dependencies]
+presentar-core = { package = "aprender-present-core", version = "0.33" }
+
+[dev-dependencies]
+proptest = "1"
+presentar-test = { package = "aprender-present-test", version = "0.31" }
+m4-tests = { path = "../m4-tests" }
+
+[lints]
+workspace = true

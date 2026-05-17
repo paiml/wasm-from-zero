@@ -1,0 +1,6 @@
+name = "wasmFromZero"
+defaultTargets = ["WasmFromZero"]
+
+[[lean_lib]]
+name = "WasmFromZero"
+srcDir = "."

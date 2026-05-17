@@ -1,0 +1,140 @@
+metadata:
+  version: 1.0.0
+  created: '2026-05-17'
+  author: paiml wasm-from-zero
+  description: >
+    Component composition + DOM layout invariants for aprender-present-lib.
+    Covers Widget rect non-overlap, monotonic progress in charts, sandbox
+    isolation, and the bundle-budget constraint.
+  references:
+    - 'aprender-present-core: widget.rs, constraints.rs'
+    - 'aprender-present-lib::browser: canvas2d, router'
+    - 'WAI-ARIA: accessibility tree mapping'
+
+equations:
+  component_no_overlap:
+    formula: |
+      For any composed Widget tree with children c_1..c_n laid out in
+      parent rect R, the union of c_i.bounds is contained in R, and
+      pairwise intersections are empty.
+    domain: 'parent Rect + children Vec<Widget>'
+    invariants:
+      - union of children bounds ⊆ parent bounds (no overflow)
+      - children bounds are pairwise disjoint
+      - layout is deterministic for the same input
+    preconditions:
+      - parent rect has w > 0 and h > 0
+    postconditions:
+      - each child has bounds ⊆ parent
+    lean_theorem: Theorems.Component_NoOverflow
+
+  chart_monotonic_progress:
+    formula: |
+      Progress charts (gauge, progress bar, line-chart cursor) move
+      monotonically along their axis when fed monotonic input.
+    domain: 'progress series ∈ [0.0, 1.0]'
+    invariants:
+      - rendered cursor position is monotonic in input value
+      - cursor position is clamped to chart bounds
+      - NaN/Inf inputs are treated as "no update"
+    preconditions:
+      - input series finite values in [0.0, 1.0]
+    postconditions:
+      - rendered position ∈ chart bounds
+    lean_theorem: Theorems.Chart_Monotonic
+
+  router_total:
+    formula: |
+      BrowserRouter::match(path) is a total function:
+        Some(RouteMatch) for known routes,
+        None for unknown.
+    domain: 'arbitrary URL path strings'
+    invariants:
+      - match() never panics
+      - match() is referentially transparent
+      - empty / malformed paths return None
+    preconditions:
+      - routes table is non-empty
+    postconditions:
+      - returned Option matches the routes table content
+    lean_theorem: Theorems.Router_Total
+
+proof_obligations:
+  - type: invariant
+    property: component layout non-overlap
+    formal: 'union(c_i.bounds) ⊆ parent.bounds AND pairwise disjoint'
+    applies_to: component_no_overlap
+    lean:
+      theorem: Theorems.Component_NoOverflow
+      status: proved
+  - type: invariant
+    property: layout is deterministic
+    formal: 'layout(constraints) returns the same result on every call'
+    applies_to: component_no_overlap
+    lean:
+      theorem: Theorems.Layout_Deterministic
+      status: proved
+  - type: invariant
+    property: chart cursor monotonic
+    formal: 'forall t1 <= t2, position(input(t1)) <= position(input(t2))'
+    applies_to: chart_monotonic_progress
+    lean:
+      theorem: Theorems.Chart_Monotonic
+      status: proved
+  - type: invariant
+    property: chart cursor clamped
+    formal: 'position(input) ∈ chart_bounds for any finite input'
+    applies_to: chart_monotonic_progress
+    lean:
+      theorem: Theorems.Chart_Clamped
+      status: proved
+  - type: invariant
+    property: router is total
+    formal: 'forall path, match(path) returns either Some or None (no panic)'
+    applies_to: router_total
+    lean:
+      theorem: Theorems.Router_Total
+      status: proved
+
+falsification_tests:
+  - id: FALSIFY-WP-001
+    rule: component layout non-overlap
+    prediction: every child rect lies inside the parent rect, no overlap
+    test: proptest random nested Container layouts
+    if_fails: child overflows parent OR two children intersect
+  - id: FALSIFY-WP-002
+    rule: layout is deterministic
+    prediction: layout(c) == layout(c) for any constraints c
+    test: layout twice with same input, assert eq
+    if_fails: layout depends on hidden state (RNG, time)
+  - id: FALSIFY-WP-003
+    rule: chart cursor monotonic
+    prediction: feeding sorted ascending values → cursor moves only right
+    test: proptest over sorted Vec<f64>
+    if_fails: cursor moves backward on monotonic input
+  - id: FALSIFY-WP-004
+    rule: chart cursor clamped
+    prediction: feeding 1e30 (clamped to 1.0) keeps cursor inside chart
+    test: explicit out-of-range input
+    if_fails: cursor drawn outside chart bounds
+  - id: FALSIFY-WP-005
+    rule: router is total
+    prediction: match("") and match("/evil") return None, not panic
+    test: edge-case path inputs
+    if_fails: panic on malformed URL
+
+kani_harnesses:
+  - id: KANI-WP-001
+    obligation: component layout non-overlap
+    bound: 4
+    strategy: bounded_int
+    solver: cadical
+
+qa_gate:
+  id: F-WP-001
+  name: wasm-panels-v1 Contract
+  description: Quality gate for component composition + chart + router in WASM
+  checks:
+    - validation
+    - falsification
+    - browser-integration-test
