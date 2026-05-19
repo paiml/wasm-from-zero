@@ -10,6 +10,7 @@ members = [
     "m4-bundle",
     "m4-tests",
     "m5-dash",
+    "wasm-demos",
 ]
 
 [workspace.package]
