@@ -1,0 +1,25 @@
+[package]
+name = "m4-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "VDOM snapshot harness for browser tests"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "tests-demo"
+path = "src/main.rs"
+
+[dependencies]
+presentar-core = { package = "aprender-present-core", version = "0.33" }
+
+[dev-dependencies]
+proptest = "1"
+presentar-test = { package = "aprender-present-test", version = "0.31" }
+
+[lints]
+workspace = true

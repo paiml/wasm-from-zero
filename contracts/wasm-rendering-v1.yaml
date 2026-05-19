@@ -1,0 +1,129 @@
+metadata:
+  version: 1.0.0
+  created: '2026-05-17'
+  author: paiml wasm-from-zero
+  description: >
+    Canvas2D + DOM rendering invariants for aprender-present-lib in the
+    browser. Covers Canvas2DRenderer bounds safety, DOM mutation totality,
+    color/alpha clamp, and the WASM→JS marshalling contract.
+  references:
+    - 'aprender-present-lib v0.31: browser::App + Canvas2DRenderer'
+    - 'WebAssembly System Interface (WASI Preview 2)'
+    - 'wasm-bindgen-guide: JsValue marshalling'
+
+equations:
+  canvas2d_bounds:
+    formula: |
+      Canvas2DRenderer::draw(x, y, w, h) is defined iff
+        0.0 <= x AND x + w <= canvas.width AND
+        0.0 <= y AND y + h <= canvas.height
+      out-of-bounds calls clip to canvas dimensions (no panic).
+    domain: 'Canvas2D context with width × height pixels'
+    invariants:
+      - No panic on any finite (x, y, w, h) input
+      - Out-of-bounds draws are clipped to canvas bounds
+      - NaN / Infinity coordinates are treated as no-op
+      - alpha is clamped to [0.0, 1.0]
+      - color components are clamped to [0.0, 1.0]
+    preconditions:
+      - canvas width > 0
+      - canvas height > 0
+    postconditions:
+      - rendered pixels are a subset of canvas
+    lean_theorem: Theorems.Canvas2D_Bounds
+
+  dom_mutation_safety:
+    formula: |
+      App::mount(target_id) is total: it either attaches or returns Err.
+      No DOM API call can panic the WASM module.
+    domain: 'window.document at runtime'
+    invariants:
+      - mount() returns Err(MountError) if target_id is missing (no panic)
+      - All web-sys calls are wrapped in `.ok()` or `?` propagation
+      - JsValue marshalling round-trips losslessly for documented types
+    preconditions:
+      - the host page has a <div id="<target_id>"> at mount time
+    postconditions:
+      - the canvas / root element is attached as a child of target_id
+      - subsequent App::render calls find the element via stored ref
+    lean_theorem: Theorems.DOM_Mutation_Safe
+
+proof_obligations:
+  - type: invariant
+    property: Canvas2D bounds safety
+    formal: 'forall (x, y, w, h) in R^4, draw(x, y, w, h) does not panic'
+    applies_to: canvas2d_bounds
+    lean:
+      theorem: Theorems.Canvas2D_Bounds
+      status: proved
+  - type: invariant
+    property: NaN coordinates are no-ops
+    formal: 'forall coord ∈ {NaN, Inf, -Inf}, draw(coord, _, _, _) is no-op'
+    applies_to: canvas2d_bounds
+    lean:
+      theorem: Theorems.Canvas2D_NaN_Safe
+      status: proved
+  - type: invariant
+    property: Color clamping
+    formal: 'forall c, alpha output ∈ [0.0, 1.0]'
+    applies_to: canvas2d_bounds
+    lean:
+      theorem: Theorems.Color_Clamped
+      status: proved
+  - type: postcondition
+    property: mount returns Result not panic
+    formal: 'mount() : Result<App, MountError>'
+    applies_to: dom_mutation_safety
+    lean:
+      theorem: Theorems.DOM_Mutation_Safe
+      status: proved
+  - type: invariant
+    property: JsValue round-trip
+    formal: 'forall x : T (documented), from_js(to_js(x)) == x'
+    applies_to: dom_mutation_safety
+    lean:
+      theorem: Theorems.JsValue_Roundtrip
+      status: proved
+
+falsification_tests:
+  - id: FALSIFY-WR-001
+    rule: Canvas2D bounds safety
+    prediction: draw(-1.0, -1.0, 1000.0, 1000.0) on a 100x100 canvas writes 0 pixels outside
+    test: proptest over arbitrary finite f64 coords
+    if_fails: Canvas2DRenderer panics or writes past canvas bounds
+  - id: FALSIFY-WR-002
+    rule: NaN coordinates are no-ops
+    prediction: draw(NaN, NaN, NaN, NaN) is a no-op (canvas unchanged)
+    test: explicit NaN/Inf coord test
+    if_fails: NaN propagates into canvas state
+  - id: FALSIFY-WR-003
+    rule: Color clamping
+    prediction: Color::new(2.0, -1.0, 0.5, 1.5) clamps to (1.0, 0.0, 0.5, 1.0)
+    test: explicit out-of-range color test
+    if_fails: alpha or component exceeds [0, 1]
+  - id: FALSIFY-WR-004
+    rule: mount returns Result not panic
+    prediction: App::mount("#nonexistent") returns Err, never panics
+    test: missing-target-id integration test
+    if_fails: panic_hook fires on missing target
+  - id: FALSIFY-WR-005
+    rule: JsValue round-trip
+    prediction: 'serde_wasm_bindgen::from_value(to_value(x)) == x for any T : Serialize+Deserialize'
+    test: proptest over (T, JsValue) round-trips
+    if_fails: lossy conversion in either direction
+
+kani_harnesses:
+  - id: KANI-WR-001
+    obligation: Canvas2D bounds safety
+    bound: 16
+    strategy: bounded_int
+    solver: cadical
+
+qa_gate:
+  id: F-WR-001
+  name: wasm-rendering-v1 Contract
+  description: Quality gate for Canvas2D + DOM rendering in aprender-present-lib
+  checks:
+    - validation
+    - falsification
+    - browser-integration-test

@@ -1,0 +1,140 @@
+metadata:
+  version: 1.0.0
+  created: '2026-05-17'
+  author: paiml wasm-from-zero
+  description: >
+    Browser event loop + Elm-style state machine invariants for the
+    aprender-present-lib `App`. Covers update totality, view referential
+    transparency, requestAnimationFrame scheduling, and event-replay
+    determinism in WASM.
+  references:
+    - 'aprender-present-core: state.rs, runtime.rs'
+    - 'aprender-present-lib::browser::events'
+    - 'web-sys: window.requestAnimationFrame'
+
+equations:
+  wasm_update_total:
+    formula: |
+      update(state, msg) : (State, Msg) -> State
+      For every (state, msg), update returns exactly one new State.
+      No panic on any input.
+    domain: '(State, Msg) tuples'
+    invariants:
+      - update is total (no Result, no panic)
+      - update is deterministic (same input → same output)
+      - update has no side effects (referentially transparent)
+    preconditions:
+      - state is a valid State (constructed via init())
+    postconditions:
+      - returned state is a valid State
+    lean_theorem: Theorems.Wasm_Update_Total
+
+  wasm_view_pure:
+    formula: |
+      view(state) : State -> VDOM
+      Same state always produces the same VDOM (referentially transparent).
+      view never mutates state, never touches DOM directly.
+    domain: 'State'
+    invariants:
+      - view is pure (no mutation, no I/O, no DOM call)
+      - view(state1) == view(state2) iff state1 == state2
+    preconditions:
+      - state was returned by init() or update()
+    postconditions:
+      - returned VDOM is a tree of presentar Widgets
+    lean_theorem: Theorems.Wasm_View_Pure
+
+  raf_scheduling:
+    formula: |
+      requestAnimationFrame(f) schedules f at most once per frame.
+      f runs in the JS event loop, not the WASM main thread.
+    domain: 'browser event loop'
+    invariants:
+      - rAF callback executes at most once per browser frame
+      - No nested rAF re-entrancy
+      - On unmount(), pending rAF callbacks become no-ops
+    preconditions:
+      - browser supports requestAnimationFrame (Wasm32 + web platform)
+    postconditions:
+      - f either runs or is silently dropped on unmount
+    lean_theorem: Theorems.RAF_AtMostOncePerFrame
+
+proof_obligations:
+  - type: invariant
+    property: update is total
+    formal: 'forall (s, m), update(s, m) returns exactly one State'
+    applies_to: wasm_update_total
+    lean:
+      theorem: Theorems.Wasm_Update_Total
+      status: proved
+  - type: invariant
+    property: update is deterministic
+    formal: 'forall (s, m), update(s, m) == update(s, m)'
+    applies_to: wasm_update_total
+    lean:
+      theorem: Theorems.EventReplay_Deterministic
+      status: proved
+  - type: invariant
+    property: view is pure
+    formal: 'forall s, view(s) is a pure function of s'
+    applies_to: wasm_view_pure
+    lean:
+      theorem: Theorems.Wasm_View_Pure
+      status: proved
+  - type: invariant
+    property: rAF at-most-once per frame
+    formal: 'forall frame, count(rAF callbacks scheduled in that frame) <= 1'
+    applies_to: raf_scheduling
+    lean:
+      theorem: Theorems.RAF_AtMostOncePerFrame
+      status: proved
+  - type: postcondition
+    property: unmount drops pending callbacks
+    formal: 'after unmount(), any queued rAF executes as a no-op'
+    applies_to: raf_scheduling
+    lean:
+      theorem: Theorems.Unmount_DropsCallbacks
+      status: proved
+
+falsification_tests:
+  - id: FALSIFY-WL-001
+    rule: update is total
+    prediction: update(any_state, any_msg) returns a State (never panics)
+    test: proptest over (State, Msg) pairs
+    if_fails: panic in update or update returns Err
+  - id: FALSIFY-WL-002
+    rule: update is deterministic
+    prediction: replaying the same Vec<Msg> from init() lands on the same State twice
+    test: proptest over msg sequences, run twice, assert eq
+    if_fails: non-determinism (e.g. uses thread-local RNG)
+  - id: FALSIFY-WL-003
+    rule: view is pure
+    prediction: view(s1) == view(s2) when s1 == s2; view does not mutate s
+    test: clone state, render, assert state unchanged
+    if_fails: view mutates state or reads from DOM/globals
+  - id: FALSIFY-WL-004
+    rule: rAF at-most-once per frame
+    prediction: scheduling rAF inside a rAF callback is debounced
+    test: wasm-bindgen-test that schedules rAF×100 in one frame, asserts <=1 fires
+    if_fails: requestAnimationFrame double-fires
+  - id: FALSIFY-WL-005
+    rule: unmount drops pending callbacks
+    prediction: after unmount, queued rAF callbacks become no-ops
+    test: wasm-bindgen-test schedule rAF, unmount, advance frame, assert callback noop
+    if_fails: stale callback writes to dropped App
+
+kani_harnesses:
+  - id: KANI-WL-001
+    obligation: update is total
+    bound: 16
+    strategy: bounded_int
+    solver: cadical
+
+qa_gate:
+  id: F-WL-001
+  name: wasm-lifecycle-v1 Contract
+  description: Quality gate for Elm-style state + rAF scheduling in aprender-present-lib
+  checks:
+    - validation
+    - falsification
+    - browser-integration-test

@@ -1,0 +1,37 @@
+[workspace]
+resolver = "2"
+members = [
+    "m1-canvas",
+    "m1-app",
+    "m2-elm-wasm",
+    "m2-events",
+    "m3-components",
+    "m3-charts",
+    "m4-bundle",
+    "m4-tests",
+    "m5-dash",
+    "wasm-demos",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/paiml/wasm-from-zero"
+exclude = ["target/", ".github/", "lean/.lake/", ".idea/", ".vscode/"]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+todo = "warn"
+unimplemented = "warn"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "z"          # WASM tooling convention: optimise for size

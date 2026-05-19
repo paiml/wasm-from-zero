@@ -1,0 +1,36 @@
+[package]
+name = "wasm-demos"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Gallery of working WASM demos — one #[wasm_bindgen] entry per demo, all painted via m1-canvas + m3-components, no hand-written JS."
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+presentar-core = { package = "aprender-present-core", version = "0.33" }
+m1-canvas = { path = "../m1-canvas" }
+m2-elm-wasm = { path = "../m2-elm-wasm" }
+m3-components = { path = "../m3-components" }
+m3-charts = { path = "../m3-charts" }
+m4-tests = { path = "../m4-tests" }
+m5-dash = { path = "../m5-dash" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+console_error_panic_hook = "0.1"
+getrandom = { version = "0.2", features = ["js"] }
+web-sys = { version = "0.3", features = [
+    "Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement",
+    "HtmlInputElement", "CanvasRenderingContext2d", "DomRect", "TextMetrics",
+    "Event", "MouseEvent", "KeyboardEvent", "InputEvent",
+    "EventTarget", "console",
+] }
+
+[lints]
+workspace = true

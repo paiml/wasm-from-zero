@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUST_MIN_STACK: "8388608"
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (stable + wasm target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry + target
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: wasm-from-zero
+          cache-all-crates: true
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Build workspace (native)
+        run: cargo build --workspace --locked
+
+      - name: Build workspace (wasm32-unknown-unknown)
+        run: cargo build --workspace --locked --target wasm32-unknown-unknown
+
+      - name: Test workspace
+        run: cargo test --workspace --locked
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+
+      - name: 95% line-coverage gate
+        run: |
+          cargo llvm-cov --workspace --locked \
+            --ignore-filename-regex 'main\.rs|src/bin/' \
+            --fail-under-lines 95
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Install pv
+        run: cargo install --locked aprender-contracts-cli
+
+      - name: Validate rendering contract via pv
+        run: pv validate contracts/wasm-rendering-v1.yaml
+
+      - name: Validate lifecycle contract via pv
+        run: pv validate contracts/wasm-lifecycle-v1.yaml
+
+      - name: Validate panels contract via pv
+        run: pv validate contracts/wasm-panels-v1.yaml
+
+      - name: Prove M1 contract markers at runtime
+        run: |
+          for bin in canvas-demo app-demo; do
+            out=$(cargo run --locked -q --bin "$bin" 2>&1)
+            echo "$out"
+            echo "$out" | grep -q "wasm-rendering-v1 holds — OK"
+          done
+
+      - name: Prove M2 contract markers at runtime
+        run: |
+          for bin in counter-demo events-demo; do
+            out=$(cargo run --locked -q --bin "$bin" 2>&1)
+            echo "$out"
+            echo "$out" | grep -q "wasm-lifecycle-v1 holds — OK"
+          done
+
+      - name: Prove M3 contract markers at runtime
+        run: |
+          for bin in components-demo charts-demo; do
+            out=$(cargo run --locked -q --bin "$bin" 2>&1)
+            echo "$out"
+            echo "$out" | grep -q "wasm-panels-v1 holds — OK"
+          done
+
+      - name: Prove M4 + M5 markers
+        run: |
+          for bin in bundle-demo tests-demo dash; do
+            out=$(cargo run --locked -q --bin "$bin" 2>&1)
+            echo "$out"
+            echo "$out" | grep -qE "wasm-(rendering|panels)-v1 holds — OK"
+          done
+
+      - name: Install pmat (advisory)
+        run: cargo install --locked pmat
+
+      - name: pmat comply (advisory)
+        continue-on-error: true
+        run: pmat comply check

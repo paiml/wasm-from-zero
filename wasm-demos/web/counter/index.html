@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>wasm-from-zero · Elm counter</title>
+  <style>
+    body { margin: 0; background: #0d1117; color: #c9d1d9; font-family: system-ui, sans-serif; padding: 20px; }
+    a.back { color: #7aa2f7; text-decoration: none; font-size: 14px; }
+    h1 { font-weight: 400; letter-spacing: 0.04em; color: #a5d6ff; margin: 12px 0 4px; }
+    p.sub { color: #565f89; font-size: 14px; margin: 0 0 20px; }
+    canvas { background: #161b22; border: 2px solid #7c3aed; border-radius: 8px; display: block; max-width: 100%; height: auto; }
+    code { color: #ffab00; }
+  </style>
+</head>
+<body>
+  <a class="back" href="../">← gallery</a>
+  <h1>Elm counter</h1>
+  <p class="sub">init / update / view in WASM · click any button</p>
+  <canvas id="dash-canvas" width="1000" height="480"></canvas>
+  <script type="module">
+    import init, { mount_counter } from "../pkg/wasm_demos.js";
+    await init();
+    mount_counter("dash-canvas");
+  </script>
+</body>
+</html>

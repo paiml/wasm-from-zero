@@ -1,0 +1,47 @@
+[package]
+name = "m5-dash"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Capstone — composes everything into a small in-browser dashboard"
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "dash"
+path = "src/main.rs"
+
+[dependencies]
+presentar-core = { package = "aprender-present-core", version = "0.33" }
+m1-canvas = { path = "../m1-canvas" }
+m1-app = { path = "../m1-app" }
+m2-elm-wasm = { path = "../m2-elm-wasm" }
+m2-events = { path = "../m2-events" }
+m3-components = { path = "../m3-components" }
+m3-charts = { path = "../m3-charts" }
+m4-tests = { path = "../m4-tests" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Note: aprender-present-lib 0.31/0.34 are broken on crates.io (showcase.rs
+# include_bytes! references a path outside the published crate). We use the
+# course's own m1-canvas primitives + raw wasm-bindgen + web-sys instead —
+# which is more faithful to what the course teaches anyway (you build the
+# Canvas2DRenderer; you don't import it).
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "Window", "Document", "Element", "HtmlCanvasElement",
+    "CanvasRenderingContext2d", "TextMetrics",
+] }
+
+[dev-dependencies]
+proptest = "1"
+presentar-test = { package = "aprender-present-test", version = "0.31" }
+
+[lints]
+workspace = true
