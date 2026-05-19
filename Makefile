@@ -34,6 +34,10 @@ help:
 	@echo "    make test          — cargo test --workspace --release"
 	@echo "    make wasm          — cargo build --target wasm32-unknown-unknown"
 	@echo ""
+	@echo "  Browser demo (real WASM in a real browser):"
+	@echo "    make wasm-bundle   — cargo build wasm32 + wasm-bindgen → m5-dash/web/pkg/"
+	@echo "    make serve         — wasm-bundle + python3 -m http.server (PORT=3000)"
+	@echo ""
 	@echo "  Lean 4:"
 	@echo "    make lean-build    — type-check every theorem (L5 proof)"
 	@echo ""
@@ -109,6 +113,28 @@ demo:
 	@cargo run --release --bin tests-demo
 	@echo "=== M5 capstone dash ==="
 	@cargo run --release --bin dash
+
+# ---- Browser demo (real WASM in a real browser, no JS) ----
+# 1. cargo build --target wasm32-unknown-unknown -p m5-dash
+# 2. wasm-bindgen → m5-dash/web/pkg/{m5_dash.js, m5_dash_bg.wasm}
+# 3. python3 -m http.server → http://127.0.0.1:3000/
+# Open the URL in any browser to see m5-dash paint to a real <canvas>.
+WASM_BG := /mnt/nvme-raid0/targets/wasm-from-zero/wasm32-unknown-unknown/release/m5_dash.wasm
+PORT ?= 3000
+
+wasm-bundle:
+	@command -v wasm-bindgen >/dev/null 2>&1 || { \
+		echo "wasm-bindgen not on PATH — run: cargo install wasm-bindgen-cli --version 0.2.121"; exit 1; }
+	cargo build --release --target wasm32-unknown-unknown -p m5-dash
+	@WASM=$$(find target -name 'm5_dash.wasm' -path '*release*' -not -path '*deps*' 2>/dev/null | head -1); \
+	[ -z "$$WASM" ] && WASM="$(WASM_BG)"; \
+	wasm-bindgen "$$WASM" --out-dir m5-dash/web/pkg --target web --no-typescript
+	@echo "bundle ready: m5-dash/web/pkg/{m5_dash.js, m5_dash_bg.wasm}"
+
+serve: wasm-bundle
+	@echo "Serving m5-dash dashboard at http://127.0.0.1:$(PORT)/"
+	@echo "Press Ctrl-C to stop."
+	@cd m5-dash/web && python3 -m http.server $(PORT)
 
 lean-build:
 	cd lean && lake build

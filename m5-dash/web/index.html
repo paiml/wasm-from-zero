@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>wasm-from-zero · capstone dashboard</title>
+  <style>
+    body { margin: 0; background: #0d1117; color: #c9d1d9; font-family: system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; }
+    canvas { background: #161b22; border: 2px solid #7c3aed; border-radius: 8px; }
+    h1 { font-weight: 400; letter-spacing: 0.08em; color: #a5d6ff; }
+    code { color: #ffab00; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>wasm-from-zero · capstone dashboard</h1>
+    <canvas id="dash-canvas" width="1280" height="720"></canvas>
+    <p>Painted from Rust → WASM via <code>aprender-present-lib::App</code>. Zero hand-written JavaScript — <code>wasm-bindgen</code> emitted the loader.</p>
+  </main>
+  <script type="module">
+    import init, { mount_dashboard } from "./pkg/m5_dash.js";
+    await init();
+    mount_dashboard("dash-canvas");
+  </script>
+</body>
+</html>

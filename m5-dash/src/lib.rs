@@ -165,3 +165,69 @@ mod tests {
         assert!(contract_marker().ends_with("— OK"));
     }
 }
+
+// ============================================================
+// Browser entry — only compiled for wasm32-unknown-unknown.
+// Walks build_paint_list() and emits Canvas2D draw calls. The same
+// PaintCmd vec that the native demo prints to stdout now lights up
+// a real HTML <canvas>. Zero hand-written JavaScript — wasm-bindgen
+// emits the .js loader; this is the Rust side end-to-end.
+// ============================================================
+#[cfg(target_arch = "wasm32")]
+mod browser {
+    use super::{build_paint_list, Dashboard};
+    use wasm_bindgen::prelude::*;
+    use wasm_bindgen::JsCast;
+
+    /// Entry point — wasm-bindgen calls this when the .js loader instantiates
+    /// the .wasm module. Mounts the dashboard onto `#<canvas_id>`.
+    #[wasm_bindgen]
+    pub fn mount_dashboard(canvas_id: &str) -> Result<(), JsValue> {
+        console_error_panic_hook::set_once();
+        let window = web_sys::window().ok_or_else(|| JsValue::from_str("no window"))?;
+        let document = window
+            .document()
+            .ok_or_else(|| JsValue::from_str("no document"))?;
+        let canvas: web_sys::HtmlCanvasElement = document
+            .get_element_by_id(canvas_id)
+            .ok_or_else(|| JsValue::from_str(&format!("no canvas #{canvas_id}")))?
+            .dyn_into()
+            .map_err(|_| JsValue::from_str("element is not a canvas"))?;
+        let ctx: web_sys::CanvasRenderingContext2d = canvas
+            .get_context("2d")?
+            .ok_or_else(|| JsValue::from_str("no 2d context"))?
+            .dyn_into()
+            .map_err(|_| JsValue::from_str("context is not Canvas2D"))?;
+
+        ctx.set_fill_style_str("#0d1117");
+        ctx.fill_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
+
+        let dash = Dashboard::fixture();
+        for cmd in build_paint_list(&dash) {
+            let r = (cmd.fg.r.clamp(0.0, 1.0) * 255.0) as u8;
+            let g = (cmd.fg.g.clamp(0.0, 1.0) * 255.0) as u8;
+            let b = (cmd.fg.b.clamp(0.0, 1.0) * 255.0) as u8;
+            ctx.set_fill_style_str("#161b22");
+            ctx.fill_rect(cmd.bounds.x, cmd.bounds.y, cmd.bounds.w, cmd.bounds.h);
+            let fill_h = cmd.bounds.h * cmd.fill.clamp(0.0, 1.0);
+            let fill_color = format!("rgb({r},{g},{b})");
+            ctx.set_fill_style_str(&fill_color);
+            ctx.fill_rect(
+                cmd.bounds.x,
+                cmd.bounds.y + cmd.bounds.h - fill_h,
+                cmd.bounds.w,
+                fill_h,
+            );
+            ctx.set_fill_style_str("#c9d1d9");
+            ctx.set_font("14px monospace");
+            ctx.fill_text(&cmd.label, cmd.bounds.x + 8.0, cmd.bounds.y + 18.0)?;
+            let fill_pct = format!("{:.0}%", cmd.fill * 100.0);
+            ctx.fill_text(
+                &fill_pct,
+                cmd.bounds.x + 8.0,
+                cmd.bounds.y + cmd.bounds.h - 8.0,
+            )?;
+        }
+        Ok(())
+    }
+}
