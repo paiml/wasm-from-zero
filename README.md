@@ -1,5 +1,9 @@
 # wasm-from-zero
 
+<p align="center">
+  <img src="assets/hero.png" alt="wasm-from-zero — six in-browser WASM demos painted from compiled Rust: Canvas2D clip, Elm counter, process table, showcase animation, capstone dashboard, and a real aprender-shell Markov autocomplete. No hand-written JavaScript." width="100%"/>
+</p>
+
 Six Rust → WebAssembly demos. Zero hand-written JavaScript. Every `<canvas>` pixel
 comes from compiled Rust via [`presentar`](https://crates.io/crates/aprender-present-lib).
 

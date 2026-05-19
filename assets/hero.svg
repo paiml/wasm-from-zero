@@ -1,11 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="wasm-from-zero: Canvas2D · Elm cycle · components — built on aprender presentar, tested with probar. Six runnable browser demos via make serve.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="wasm-from-zero: six in-browser WASM demos painted from compiled Rust — Canvas2D clip, Elm counter, process table, showcase animation, capstone dashboard, and a real aprender-shell Markov autocomplete. No hand-written JavaScript.">
 <!-- GRID PROTOCOL MANIFEST
      Canvas: 1200x600 | text_elements: 0 | role: img
-     Zone 1 (0..400):   canvas-grid      (Canvas2D rect draws + clip)
-     Zone 2 (400..800): elm-cycle        (Event → State → Frame, in WASM)
-     Zone 3 (800..1200): components      (browser window + composed panels)
-     Bottom: aprender presentar + probar platform strip (amber)
-     Stroke ≥ 4 | Fill-opacity 0.30–0.55 | Palette: oxide-premium
+     Top strip (30-80):   Rust → WASM → Canvas pipeline trio
+     Card grid (90-510):  2 rows × 3 cards, each 340×200, gaps 30/20
+       Row 1: 1 canvas/clip · 2 elm counter · 3 process table
+       Row 2: 4 showcase    · 5 wasm-dash    · 6 shell-ml  (gradient frame, ML)
+     Bottom (535-571):    aprender presentar + probar platform strip (amber)
+     Stroke ≥ 3 | Fill-opacity 0.30–0.65 | Palette: oxide-premium
 -->
 
 <defs>
@@ -13,158 +14,297 @@
     <stop offset="0%" stop-color="#0d1117"/>
     <stop offset="100%" stop-color="#1a1d23"/>
   </linearGradient>
-  <radialGradient id="zone-blue" cx="50%" cy="50%" r="60%">
-    <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.20"/>
-    <stop offset="100%" stop-color="#4a9eff" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="zone-purple" cx="50%" cy="50%" r="60%">
-    <stop offset="0%" stop-color="#9f8fef" stop-opacity="0.20"/>
-    <stop offset="100%" stop-color="#9f8fef" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="zone-green" cx="50%" cy="50%" r="60%">
-    <stop offset="0%" stop-color="#36b37e" stop-opacity="0.20"/>
-    <stop offset="100%" stop-color="#36b37e" stop-opacity="0"/>
-  </radialGradient>
   <linearGradient id="accent-rust" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0%" stop-color="#4a9eff"/>
     <stop offset="50%" stop-color="#9f8fef"/>
     <stop offset="100%" stop-color="#36b37e"/>
+  </linearGradient>
+  <linearGradient id="canvas-rect" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.6"/>
+    <stop offset="100%" stop-color="#0056d2" stop-opacity="0.4"/>
   </linearGradient>
   <linearGradient id="platform-grad" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0%" stop-color="#ffab00" stop-opacity="0.45"/>
     <stop offset="50%" stop-color="#ff9d1a" stop-opacity="0.55"/>
     <stop offset="100%" stop-color="#f38b00" stop-opacity="0.45"/>
   </linearGradient>
-  <linearGradient id="canvas-rect" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.6"/>
-    <stop offset="100%" stop-color="#0056d2" stop-opacity="0.4"/>
-  </linearGradient>
+  <radialGradient id="ml-glow" cx="50%" cy="50%" r="60%">
+    <stop offset="0%" stop-color="#9f8fef" stop-opacity="0.30"/>
+    <stop offset="100%" stop-color="#9f8fef" stop-opacity="0"/>
+  </radialGradient>
 </defs>
 
+<!-- background + outer frame -->
 <rect width="1200" height="600" fill="url(#bg-grad)"/>
 <rect x="20" y="20" width="1160" height="560" fill="none" stroke="#30363d" stroke-width="2"/>
 
-<ellipse cx="200" cy="280" rx="200" ry="220" fill="url(#zone-blue)"/>
-<ellipse cx="600" cy="280" rx="200" ry="220" fill="url(#zone-purple)"/>
-<ellipse cx="1000" cy="280" rx="200" ry="220" fill="url(#zone-green)"/>
+<!-- corner accent dots -->
+<circle cx="50" cy="50" r="8" fill="#4a9eff" fill-opacity="0.6"/>
+<circle cx="1150" cy="50" r="8" fill="#36b37e" fill-opacity="0.6"/>
+<circle cx="50" cy="550" r="8" fill="#ffab00" fill-opacity="0.7"/>
+<circle cx="1150" cy="550" r="8" fill="#ff9d1a" fill-opacity="0.7"/>
 
-<rect x="80" y="60" width="1040" height="6" rx="3" fill="url(#accent-rust)"/>
-
-<line x1="400" y1="100" x2="400" y2="470" stroke="#30363d" stroke-width="2"/>
-<line x1="800" y1="100" x2="800" y2="470" stroke="#30363d" stroke-width="2"/>
-
-<circle cx="50" cy="50" r="10" fill="#4a9eff" fill-opacity="0.6"/>
-<circle cx="1150" cy="50" r="10" fill="#36b37e" fill-opacity="0.6"/>
-<circle cx="50" cy="550" r="10" fill="#ffab00" fill-opacity="0.7"/>
-<circle cx="1150" cy="550" r="10" fill="#ff9d1a" fill-opacity="0.7"/>
-
-<!-- ZONE 1: Canvas2D — a browser canvas frame with rect draws -->
-<g id="zone-canvas">
-  <!-- canvas frame -->
-  <rect x="80" y="160" width="240" height="240" rx="6" fill="#0d1117" stroke="#4a9eff" stroke-width="5"/>
-  <!-- title bar suggesting <canvas id="root"> -->
-  <rect x="80" y="160" width="240" height="20" rx="6" fill="#4a9eff" fill-opacity="0.35"/>
-  <!-- draw operations on the canvas -->
-  <rect x="100" y="200" width="80" height="60" rx="4" fill="url(#canvas-rect)" stroke="#4a9eff" stroke-width="3"/>
-  <rect x="210" y="200" width="90" height="40" rx="4" fill="#4a9eff" fill-opacity="0.30" stroke="#4a9eff" stroke-width="3"/>
-  <rect x="100" y="280" width="120" height="50" rx="4" fill="#4a9eff" fill-opacity="0.45" stroke="#4a9eff" stroke-width="3"/>
-  <rect x="240" y="260" width="60" height="100" rx="4" fill="#4a9eff" fill-opacity="0.25" stroke="#4a9eff" stroke-width="3"/>
-  <rect x="100" y="350" width="200" height="30" rx="4" fill="#4a9eff" fill-opacity="0.55" stroke="#4a9eff" stroke-width="3"/>
-  <!-- "clip past edge" indication: a rect that's been clipped at the right edge -->
-  <line x1="316" y1="200" x2="316" y2="260" stroke="#a5d6ff" stroke-width="2" stroke-dasharray="4 4"/>
+<!-- TOP PIPELINE STRIP: Rust → WASM → Canvas as three connected nodes
+     Read left-to-right as the build pipeline: cargo build → wasm-bindgen → Canvas2D. -->
+<g id="pipeline">
+  <line x1="160" y1="50" x2="1040" y2="50" stroke="url(#accent-rust)" stroke-width="3"/>
+  <!-- Rust node: a gear-ish hexagon stand-in (octagon) -->
+  <polygon points="140,38 154,32 168,38 168,52 154,58 140,52" fill="#0d1117" stroke="#4a9eff" stroke-width="4"/>
+  <rect x="146" y="42" width="16" height="6" fill="#4a9eff" fill-opacity="0.6"/>
+  <!-- WASM node: a stacked-block icon -->
+  <circle cx="600" cy="45" r="18" fill="#0d1117" stroke="#9f8fef" stroke-width="4"/>
+  <rect x="592" y="38" width="7" height="7" fill="#9f8fef" fill-opacity="0.6"/>
+  <rect x="601" y="38" width="7" height="7" fill="#9f8fef" fill-opacity="0.6"/>
+  <rect x="592" y="47" width="7" height="7" fill="#9f8fef" fill-opacity="0.6"/>
+  <rect x="601" y="47" width="7" height="7" fill="#9f8fef" fill-opacity="0.6"/>
+  <!-- Canvas node: a small framed rect -->
+  <rect x="1042" y="32" width="36" height="26" rx="3" fill="#0d1117" stroke="#36b37e" stroke-width="4"/>
+  <rect x="1048" y="38" width="10" height="14" fill="#36b37e" fill-opacity="0.55"/>
+  <rect x="1062" y="38" width="10" height="14" fill="#36b37e" fill-opacity="0.35"/>
 </g>
 
-<!-- ZONE 2: Elm cycle in WASM — same shape, smaller for variety -->
-<g id="zone-elm">
-  <circle cx="500" cy="220" r="48" fill="#161b22" stroke="#9f8fef" stroke-width="5"/>
-  <!-- Event icon: a cursor click -->
-  <polygon points="488,205 488,232 498,222 506,234 514,228 506,216 516,216" fill="#9f8fef" fill-opacity="0.7"/>
-  <circle cx="700" cy="220" r="48" fill="#161b22" stroke="#9f8fef" stroke-width="5"/>
-  <!-- State icon: stack of squares -->
-  <rect x="685" y="200" width="14" height="14" rx="2" fill="#9f8fef" fill-opacity="0.6"/>
-  <rect x="703" y="200" width="14" height="14" rx="2" fill="#9f8fef" fill-opacity="0.6"/>
-  <rect x="685" y="218" width="14" height="14" rx="2" fill="#9f8fef" fill-opacity="0.6"/>
-  <rect x="703" y="218" width="14" height="14" rx="2" fill="#9f8fef" fill-opacity="0.6"/>
-  <rect x="694" y="232" width="14" height="14" rx="2" fill="#9f8fef" fill-opacity="0.8"/>
-  <!-- VDom icon: a tree -->
-  <circle cx="600" cy="380" r="48" fill="#161b22" stroke="#9f8fef" stroke-width="5"/>
-  <line x1="600" y1="360" x2="585" y2="380" stroke="#9f8fef" stroke-width="3"/>
-  <line x1="600" y1="360" x2="615" y2="380" stroke="#9f8fef" stroke-width="3"/>
-  <line x1="585" y1="380" x2="575" y2="400" stroke="#9f8fef" stroke-width="3"/>
-  <line x1="585" y1="380" x2="595" y2="400" stroke="#9f8fef" stroke-width="3"/>
-  <line x1="615" y1="380" x2="615" y2="400" stroke="#9f8fef" stroke-width="3"/>
-  <circle cx="600" cy="360" r="4" fill="#9f8fef"/>
-  <circle cx="585" cy="380" r="4" fill="#9f8fef"/>
-  <circle cx="615" cy="380" r="4" fill="#9f8fef"/>
-  <circle cx="575" cy="400" r="4" fill="#9f8fef"/>
-  <circle cx="595" cy="400" r="4" fill="#9f8fef"/>
-  <circle cx="615" cy="400" r="4" fill="#9f8fef"/>
-  <!-- arrows -->
-  <path d="M 548 220 L 645 220" stroke="#9f8fef" stroke-width="5" fill="none"/>
-  <polygon points="640,212 660,220 640,228" fill="#9f8fef"/>
-  <path d="M 678 260 L 632 338" stroke="#9f8fef" stroke-width="5" fill="none"/>
-  <polygon points="640,324 624,354 654,340" fill="#9f8fef"/>
-  <path d="M 552 360 L 510 270" stroke="#9f8fef" stroke-width="5" fill="none" stroke-dasharray="6 6"/>
-  <polygon points="514,286 504,258 524,280" fill="#9f8fef"/>
+<!-- ============================================================ -->
+<!-- CARD GRID — six demos, 2 rows × 3 columns                    -->
+<!-- ============================================================ -->
+
+<!-- CARD 1 — canvas/clip (blue): nested rects with a clipped right edge -->
+<g id="card-canvas" transform="translate(60, 90)">
+  <rect width="340" height="200" rx="6" fill="#0d1117" stroke="#4a9eff" stroke-width="4"/>
+  <rect width="340" height="22" rx="6" fill="#4a9eff" fill-opacity="0.35"/>
+  <!-- traffic lights (browser/canvas frame chrome) -->
+  <circle cx="14" cy="11" r="3.5" fill="#ff5630" fill-opacity="0.85"/>
+  <circle cx="26" cy="11" r="3.5" fill="#ffab00" fill-opacity="0.85"/>
+  <circle cx="38" cy="11" r="3.5" fill="#36b37e" fill-opacity="0.85"/>
+  <!-- the four rects with one bleeding past the right edge to suggest the clip -->
+  <rect x="20" y="48" width="90" height="50" rx="3" fill="url(#canvas-rect)" stroke="#4a9eff" stroke-width="2.5"/>
+  <rect x="130" y="48" width="80" height="40" rx="3" fill="#4a9eff" fill-opacity="0.28" stroke="#4a9eff" stroke-width="2.5"/>
+  <rect x="225" y="48" width="120" height="60" rx="3" fill="#4a9eff" fill-opacity="0.42" stroke="#4a9eff" stroke-width="2.5"/>
+  <rect x="20" y="112" width="200" height="60" rx="3" fill="#4a9eff" fill-opacity="0.55" stroke="#4a9eff" stroke-width="2.5"/>
+  <rect x="240" y="120" width="100" height="44" rx="3" fill="#4a9eff" fill-opacity="0.20" stroke="#4a9eff" stroke-width="2.5"/>
+  <!-- clip indicator: dashed verticals at the bleed edge -->
+  <line x1="338" y1="48" x2="338" y2="172" stroke="#a5d6ff" stroke-width="1.5" stroke-dasharray="3 3"/>
 </g>
 
-<!-- ZONE 3: components — a browser window with composed panels -->
-<g id="zone-components">
-  <rect x="830" y="160" width="340" height="260" rx="8" fill="#161b22" stroke="#36b37e" stroke-width="5"/>
-  <!-- title bar -->
-  <rect x="830" y="160" width="340" height="24" rx="8" fill="#36b37e" fill-opacity="0.35"/>
-  <circle cx="844" cy="172" r="4" fill="#ff5630" fill-opacity="0.9"/>
-  <circle cx="858" cy="172" r="4" fill="#ffab00" fill-opacity="0.9"/>
-  <circle cx="872" cy="172" r="4" fill="#36b37e" fill-opacity="0.9"/>
-  <!-- URL bar -->
-  <rect x="890" y="166" width="270" height="12" rx="3" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
-  <!-- header strip -->
-  <rect x="844" y="196" width="312" height="34" rx="4" fill="#0d1117" stroke="#36b37e" stroke-width="2.5"/>
-  <rect x="850" y="202" width="80" height="22" rx="3" fill="#36b37e" fill-opacity="0.55"/>
-  <rect x="940" y="202" width="120" height="22" rx="3" fill="#36b37e" fill-opacity="0.35"/>
-  <rect x="1070" y="202" width="80" height="22" rx="3" fill="#36b37e" fill-opacity="0.55"/>
-  <!-- main: chart on left, sidebar on right -->
-  <rect x="844" y="240" width="200" height="170" rx="4" fill="#0d1117" stroke="#36b37e" stroke-width="2.5"/>
-  <!-- chart curve -->
-  <polyline points="850,400 870,380 890,386 910,360 930,366 950,346 970,352 990,340 1010,348 1030,336 1040,338"
-            fill="none" stroke="#7ee787" stroke-width="3.5"/>
-  <!-- bars under -->
-  <rect x="855" y="280" width="12" height="60" fill="#36b37e" fill-opacity="0.4"/>
-  <rect x="875" y="295" width="12" height="45" fill="#36b37e" fill-opacity="0.4"/>
-  <rect x="895" y="270" width="12" height="70" fill="#36b37e" fill-opacity="0.4"/>
-  <rect x="915" y="305" width="12" height="35" fill="#36b37e" fill-opacity="0.4"/>
-  <!-- sidebar list -->
-  <rect x="1052" y="240" width="104" height="170" rx="4" fill="#0d1117" stroke="#36b37e" stroke-width="2.5"/>
-  <rect x="1060" y="250" width="88" height="3.5" fill="#7ee787" fill-opacity="0.6"/>
-  <rect x="1060" y="262" width="64" height="3.5" fill="#36b37e" fill-opacity="0.5"/>
-  <rect x="1060" y="278" width="74" height="3.5" fill="#7ee787" fill-opacity="0.6"/>
-  <rect x="1060" y="290" width="56" height="3.5" fill="#36b37e" fill-opacity="0.5"/>
-  <rect x="1060" y="306" width="80" height="3.5" fill="#7ee787" fill-opacity="0.6"/>
-  <rect x="1060" y="318" width="50" height="3.5" fill="#36b37e" fill-opacity="0.5"/>
-  <rect x="1060" y="334" width="78" height="3.5" fill="#7ee787" fill-opacity="0.6"/>
-  <rect x="1060" y="346" width="60" height="3.5" fill="#36b37e" fill-opacity="0.5"/>
+<!-- CARD 2 — counter (purple): a number display with [−] [reset] [+] -->
+<g id="card-counter" transform="translate(430, 90)">
+  <rect width="340" height="200" rx="6" fill="#0d1117" stroke="#9f8fef" stroke-width="4"/>
+  <rect width="340" height="22" rx="6" fill="#9f8fef" fill-opacity="0.35"/>
+  <circle cx="14" cy="11" r="3.5" fill="#ff5630" fill-opacity="0.85"/>
+  <circle cx="26" cy="11" r="3.5" fill="#ffab00" fill-opacity="0.85"/>
+  <circle cx="38" cy="11" r="3.5" fill="#36b37e" fill-opacity="0.85"/>
+  <!-- big counter display with a seven-segment "42" readout (a universal
+       counter-value pictogram — no text, just LED segments) -->
+  <rect x="40" y="48" width="260" height="80" rx="6" fill="#161b22" stroke="#9f8fef" stroke-width="2.5"/>
+  <!-- digit "4" — segments F (top-left vert), G (middle), B (top-right vert), C (bot-right vert) -->
+  <rect x="134" y="66" width="6" height="22" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="138" y="86" width="22" height="6" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="156" y="66" width="6" height="22" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="156" y="90" width="6" height="22" fill="#9f8fef" fill-opacity="0.85"/>
+  <!-- digit "2" — segments A, B, G, E, D -->
+  <rect x="182" y="64" width="22" height="6" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="200" y="66" width="6" height="22" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="182" y="86" width="22" height="6" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="178" y="90" width="6" height="22" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="182" y="110" width="22" height="6" fill="#9f8fef" fill-opacity="0.85"/>
+  <!-- three buttons below: − , ⟲ , + -->
+  <rect x="40" y="142" width="76" height="36" rx="6" fill="#161b22" stroke="#9f8fef" stroke-width="2.5"/>
+  <rect x="55" y="158" width="46" height="4" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="132" y="142" width="76" height="36" rx="6" fill="#161b22" stroke="#9f8fef" stroke-width="2.5"/>
+  <path d="M 154 160 a 14 14 0 1 1 28 0 a 14 14 0 1 1 -22 8" fill="none" stroke="#9f8fef" stroke-width="3"/>
+  <polygon points="156,164 168,164 162,172" fill="#9f8fef"/>
+  <rect x="224" y="142" width="76" height="36" rx="6" fill="#161b22" stroke="#9f8fef" stroke-width="2.5"/>
+  <rect x="240" y="158" width="46" height="4" fill="#9f8fef" fill-opacity="0.85"/>
+  <rect x="260" y="146" width="6" height="28" fill="#9f8fef" fill-opacity="0.85"/>
 </g>
 
-<!-- TRI-SYMBOL SEAL (Canvas / Elm / Compose) -->
-<g id="seal">
-  <circle cx="200" cy="500" r="22" fill="#0d1117" stroke="#4a9eff" stroke-width="4.5"/>
-  <circle cx="600" cy="500" r="22" fill="#0d1117" stroke="#9f8fef" stroke-width="4.5"/>
-  <circle cx="1000" cy="500" r="22" fill="#0d1117" stroke="#36b37e" stroke-width="4.5"/>
-  <line x1="222" y1="500" x2="578" y2="500" stroke="url(#accent-rust)" stroke-width="3"/>
-  <line x1="622" y1="500" x2="978" y2="500" stroke="url(#accent-rust)" stroke-width="3"/>
-  <!-- inner glyphs -->
-  <rect x="190" y="490" width="20" height="20" fill="#4a9eff" fill-opacity="0.55"/>
-  <circle cx="600" cy="500" r="10" fill="#9f8fef" fill-opacity="0.55"/>
-  <!-- "browser frame" mini-glyph for compose -->
-  <rect x="989" y="491" width="22" height="18" rx="2" fill="none" stroke="#36b37e" stroke-width="3"/>
-  <line x1="989" y1="498" x2="1011" y2="498" stroke="#36b37e" stroke-width="2"/>
+<!-- CARD 3 — process table (green): striped rows + a sparkline up top -->
+<g id="card-table" transform="translate(800, 90)">
+  <rect width="340" height="200" rx="6" fill="#0d1117" stroke="#36b37e" stroke-width="4"/>
+  <rect width="340" height="22" rx="6" fill="#36b37e" fill-opacity="0.35"/>
+  <circle cx="14" cy="11" r="3.5" fill="#ff5630" fill-opacity="0.85"/>
+  <circle cx="26" cy="11" r="3.5" fill="#ffab00" fill-opacity="0.85"/>
+  <circle cx="38" cy="11" r="3.5" fill="#36b37e" fill-opacity="0.85"/>
+  <!-- sparkline header -->
+  <rect x="20" y="36" width="300" height="32" rx="3" fill="#161b22" stroke="#36b37e" stroke-width="2"/>
+  <polyline points="28,60 50,52 72,56 94,46 116,50 138,40 160,44 182,36 204,42 226,32 248,38 270,30 292,34 312,28"
+            fill="none" stroke="#7ee787" stroke-width="2.5"/>
+  <!-- table rows: column header + 5 rows, one highlighted -->
+  <rect x="20" y="76" width="300" height="14" fill="#36b37e" fill-opacity="0.30"/>
+  <rect x="26" y="80" width="40" height="6" fill="#36b37e" fill-opacity="0.85"/>
+  <rect x="76" y="80" width="100" height="6" fill="#36b37e" fill-opacity="0.55"/>
+  <rect x="190" y="80" width="50" height="6" fill="#36b37e" fill-opacity="0.55"/>
+  <rect x="260" y="80" width="50" height="6" fill="#36b37e" fill-opacity="0.55"/>
+  <!-- 5 data rows -->
+  <g>
+    <rect x="20" y="96" width="300" height="16" fill="#9f8fef" fill-opacity="0.18"/>
+    <rect x="26" y="102" width="34" height="5" fill="#7ee787" fill-opacity="0.85"/>
+    <rect x="76" y="102" width="80" height="5" fill="#9f8fef" fill-opacity="0.55"/>
+    <rect x="190" y="102" width="42" height="5" fill="#9f8fef" fill-opacity="0.45"/>
+    <rect x="260" y="102" width="48" height="5" fill="#9f8fef" fill-opacity="0.65"/>
+  </g>
+  <g>
+    <rect x="20" y="116" width="300" height="16" fill="#0d1117"/>
+    <rect x="26" y="122" width="28" height="5" fill="#7ee787" fill-opacity="0.85"/>
+    <rect x="76" y="122" width="92" height="5" fill="#9f8fef" fill-opacity="0.55"/>
+    <rect x="190" y="122" width="36" height="5" fill="#9f8fef" fill-opacity="0.45"/>
+    <rect x="260" y="122" width="40" height="5" fill="#9f8fef" fill-opacity="0.65"/>
+  </g>
+  <g>
+    <rect x="20" y="136" width="300" height="16" fill="#9f8fef" fill-opacity="0.10"/>
+    <rect x="26" y="142" width="36" height="5" fill="#7ee787" fill-opacity="0.85"/>
+    <rect x="76" y="142" width="70" height="5" fill="#9f8fef" fill-opacity="0.55"/>
+    <rect x="190" y="142" width="48" height="5" fill="#9f8fef" fill-opacity="0.45"/>
+    <rect x="260" y="142" width="36" height="5" fill="#9f8fef" fill-opacity="0.65"/>
+  </g>
+  <g>
+    <rect x="20" y="156" width="300" height="16" fill="#0d1117"/>
+    <rect x="26" y="162" width="30" height="5" fill="#7ee787" fill-opacity="0.85"/>
+    <rect x="76" y="162" width="88" height="5" fill="#9f8fef" fill-opacity="0.55"/>
+    <rect x="190" y="162" width="40" height="5" fill="#9f8fef" fill-opacity="0.45"/>
+    <rect x="260" y="162" width="44" height="5" fill="#9f8fef" fill-opacity="0.65"/>
+  </g>
+  <g>
+    <rect x="20" y="176" width="300" height="16" fill="#9f8fef" fill-opacity="0.10"/>
+    <rect x="26" y="182" width="32" height="5" fill="#7ee787" fill-opacity="0.85"/>
+    <rect x="76" y="182" width="74" height="5" fill="#9f8fef" fill-opacity="0.55"/>
+    <rect x="190" y="182" width="44" height="5" fill="#9f8fef" fill-opacity="0.45"/>
+    <rect x="260" y="182" width="38" height="5" fill="#9f8fef" fill-opacity="0.65"/>
+  </g>
 </g>
 
-<!-- APRENDER PRESENTAR + PROBAR PLATFORM STRIP -->
+<!-- CARD 4 — showcase (purple): bar chart left + donut + particles right -->
+<g id="card-showcase" transform="translate(60, 310)">
+  <rect width="340" height="200" rx="6" fill="#0d1117" stroke="#9f8fef" stroke-width="4"/>
+  <rect width="340" height="22" rx="6" fill="#9f8fef" fill-opacity="0.35"/>
+  <circle cx="14" cy="11" r="3.5" fill="#ff5630" fill-opacity="0.85"/>
+  <circle cx="26" cy="11" r="3.5" fill="#ffab00" fill-opacity="0.85"/>
+  <circle cx="38" cy="11" r="3.5" fill="#36b37e" fill-opacity="0.85"/>
+  <!-- bar chart (left) -->
+  <rect x="20" y="40" width="180" height="140" rx="3" fill="#161b22" stroke="#9f8fef" stroke-width="2"/>
+  <rect x="30" y="120" width="20" height="50" fill="#9f8fef" fill-opacity="0.45"/>
+  <rect x="56" y="100" width="20" height="70" fill="#9f8fef" fill-opacity="0.55"/>
+  <rect x="82" y="80" width="20" height="90" fill="#9f8fef" fill-opacity="0.65"/>
+  <rect x="108" y="68" width="20" height="102" fill="#9f8fef" fill-opacity="0.75"/>
+  <rect x="134" y="92" width="20" height="78" fill="#9f8fef" fill-opacity="0.55"/>
+  <rect x="160" y="112" width="20" height="58" fill="#9f8fef" fill-opacity="0.45"/>
+  <!-- donut (top right) -->
+  <g transform="translate(265, 78)">
+    <circle r="32" fill="none" stroke="#9f8fef" stroke-width="10" stroke-opacity="0.20"/>
+    <path d="M 0 -32 A 32 32 0 0 1 30 11" fill="none" stroke="#9f8fef" stroke-width="10"/>
+    <path d="M 30 11 A 32 32 0 0 1 -19 26" fill="none" stroke="#bb9af7" stroke-width="10"/>
+    <circle r="14" fill="#161b22"/>
+  </g>
+  <!-- particles (bottom right) -->
+  <g>
+    <circle cx="225" cy="148" r="2.5" fill="#bb9af7" fill-opacity="0.8"/>
+    <circle cx="244" cy="156" r="2" fill="#9f8fef" fill-opacity="0.7"/>
+    <circle cx="262" cy="146" r="3" fill="#bb9af7" fill-opacity="0.9"/>
+    <circle cx="278" cy="160" r="2" fill="#9f8fef" fill-opacity="0.7"/>
+    <circle cx="294" cy="150" r="2.5" fill="#bb9af7" fill-opacity="0.8"/>
+    <circle cx="312" cy="158" r="2" fill="#9f8fef" fill-opacity="0.7"/>
+    <circle cx="232" cy="170" r="2" fill="#9f8fef" fill-opacity="0.6"/>
+    <circle cx="252" cy="172" r="2.5" fill="#bb9af7" fill-opacity="0.7"/>
+    <circle cx="272" cy="172" r="2" fill="#9f8fef" fill-opacity="0.6"/>
+    <circle cx="290" cy="172" r="3" fill="#bb9af7" fill-opacity="0.8"/>
+    <circle cx="308" cy="172" r="2" fill="#9f8fef" fill-opacity="0.6"/>
+  </g>
+</g>
+
+<!-- CARD 5 — wasm-dash (green): a dashboard with header + 3 panels -->
+<g id="card-dash" transform="translate(430, 310)">
+  <rect width="340" height="200" rx="6" fill="#0d1117" stroke="#36b37e" stroke-width="4"/>
+  <rect width="340" height="22" rx="6" fill="#36b37e" fill-opacity="0.35"/>
+  <circle cx="14" cy="11" r="3.5" fill="#ff5630" fill-opacity="0.85"/>
+  <circle cx="26" cy="11" r="3.5" fill="#ffab00" fill-opacity="0.85"/>
+  <circle cx="38" cy="11" r="3.5" fill="#36b37e" fill-opacity="0.85"/>
+  <!-- header strip with three KPI tiles -->
+  <rect x="20" y="36" width="92" height="40" rx="3" fill="#161b22" stroke="#36b37e" stroke-width="2"/>
+  <rect x="28" y="50" width="60" height="6" fill="#7ee787" fill-opacity="0.85"/>
+  <rect x="28" y="62" width="30" height="4" fill="#36b37e" fill-opacity="0.55"/>
+  <rect x="124" y="36" width="92" height="40" rx="3" fill="#161b22" stroke="#36b37e" stroke-width="2"/>
+  <rect x="132" y="50" width="48" height="6" fill="#7ee787" fill-opacity="0.85"/>
+  <rect x="132" y="62" width="30" height="4" fill="#36b37e" fill-opacity="0.55"/>
+  <rect x="228" y="36" width="92" height="40" rx="3" fill="#161b22" stroke="#36b37e" stroke-width="2"/>
+  <rect x="236" y="50" width="54" height="6" fill="#7ee787" fill-opacity="0.85"/>
+  <rect x="236" y="62" width="30" height="4" fill="#36b37e" fill-opacity="0.55"/>
+  <!-- main panel: a line+bar combo -->
+  <rect x="20" y="84" width="200" height="96" rx="3" fill="#161b22" stroke="#36b37e" stroke-width="2"/>
+  <polyline points="28,164 48,148 68,154 88,134 108,140 128,118 148,124 168,108 188,116 208,100"
+            fill="none" stroke="#7ee787" stroke-width="2.5"/>
+  <rect x="28" y="148" width="10" height="24" fill="#36b37e" fill-opacity="0.45"/>
+  <rect x="48" y="138" width="10" height="34" fill="#36b37e" fill-opacity="0.45"/>
+  <rect x="68" y="146" width="10" height="26" fill="#36b37e" fill-opacity="0.45"/>
+  <rect x="88" y="128" width="10" height="44" fill="#36b37e" fill-opacity="0.45"/>
+  <rect x="108" y="134" width="10" height="38" fill="#36b37e" fill-opacity="0.45"/>
+  <rect x="128" y="120" width="10" height="52" fill="#36b37e" fill-opacity="0.45"/>
+  <!-- side list -->
+  <rect x="228" y="84" width="92" height="96" rx="3" fill="#161b22" stroke="#36b37e" stroke-width="2"/>
+  <rect x="236" y="94" width="76" height="3" fill="#7ee787" fill-opacity="0.7"/>
+  <rect x="236" y="104" width="58" height="3" fill="#36b37e" fill-opacity="0.5"/>
+  <rect x="236" y="116" width="68" height="3" fill="#7ee787" fill-opacity="0.7"/>
+  <rect x="236" y="126" width="48" height="3" fill="#36b37e" fill-opacity="0.5"/>
+  <rect x="236" y="138" width="74" height="3" fill="#7ee787" fill-opacity="0.7"/>
+  <rect x="236" y="148" width="44" height="3" fill="#36b37e" fill-opacity="0.5"/>
+  <rect x="236" y="160" width="64" height="3" fill="#7ee787" fill-opacity="0.7"/>
+  <rect x="236" y="170" width="52" height="3" fill="#36b37e" fill-opacity="0.5"/>
+</g>
+
+<!-- CARD 6 — shell-ML (gradient frame): $ prompt + 3 suggestion rows + ML badge -->
+<g id="card-shell">
+  <!-- subtle glow behind to call this card out as the ML one -->
+  <ellipse cx="970" cy="410" rx="220" ry="140" fill="url(#ml-glow)"/>
+  <g transform="translate(800, 310)">
+    <rect width="340" height="200" rx="6" fill="#0d1117" stroke="url(#accent-rust)" stroke-width="4"/>
+    <rect width="340" height="22" rx="6" fill="#9f8fef" fill-opacity="0.30"/>
+    <circle cx="14" cy="11" r="3.5" fill="#ff5630" fill-opacity="0.85"/>
+    <circle cx="26" cy="11" r="3.5" fill="#ffab00" fill-opacity="0.85"/>
+    <circle cx="38" cy="11" r="3.5" fill="#36b37e" fill-opacity="0.85"/>
+    <!-- ML badge — top right: 3 connected dots = n-gram trigram -->
+    <g transform="translate(284, 6)">
+      <rect width="48" height="12" rx="6" fill="#161b22" stroke="url(#accent-rust)" stroke-width="1.5"/>
+      <circle cx="14" cy="6" r="2.5" fill="#4a9eff"/>
+      <circle cx="24" cy="6" r="2.5" fill="#9f8fef"/>
+      <circle cx="34" cy="6" r="2.5" fill="#36b37e"/>
+      <line x1="16" y1="6" x2="22" y2="6" stroke="#9f8fef" stroke-width="1.5"/>
+      <line x1="26" y1="6" x2="32" y2="6" stroke="#9f8fef" stroke-width="1.5"/>
+    </g>
+    <!-- prompt bar: $ glyph + input buffer + cursor -->
+    <rect x="20" y="40" width="300" height="36" rx="4" fill="#161b22" stroke="#9f8fef" stroke-width="2"/>
+    <!-- $ glyph (synthetic from rects) -->
+    <g transform="translate(34, 50)">
+      <rect x="0" y="2" width="14" height="3" fill="#7ee787"/>
+      <rect x="0" y="14" width="14" height="3" fill="#7ee787"/>
+      <rect x="0" y="2" width="3" height="9" fill="#7ee787"/>
+      <rect x="11" y="8" width="3" height="9" fill="#7ee787"/>
+      <rect x="6" y="-1" width="2" height="20" fill="#7ee787"/>
+    </g>
+    <!-- typed input (suggested by a few mid-grey boxes) -->
+    <rect x="58" y="54" width="40" height="8" fill="#c0caf5" fill-opacity="0.85"/>
+    <!-- caret -->
+    <rect x="102" y="50" width="3" height="16" fill="#c0caf5"/>
+    <!-- suggestion panel: 3 rows of decreasing width, top highlighted -->
+    <rect x="20" y="86" width="300" height="98" rx="4" fill="#161b22" stroke="#9f8fef" stroke-width="2"/>
+    <!-- row 1 (selected): highlighted band + a matched-prefix swatch + completion swatch -->
+    <rect x="22" y="90" width="296" height="28" rx="2" fill="#3d59a1" fill-opacity="0.55"/>
+    <circle cx="32" cy="104" r="3" fill="#7ee787"/>
+    <rect x="44" y="100" width="32" height="8" fill="#f5c542"/>
+    <rect x="80" y="100" width="100" height="8" fill="#c0caf5" fill-opacity="0.85"/>
+    <!-- row 2 -->
+    <circle cx="32" cy="132" r="3" fill="#9f8fef"/>
+    <rect x="44" y="128" width="32" height="8" fill="#f5c542"/>
+    <rect x="80" y="128" width="74" height="8" fill="#c0caf5" fill-opacity="0.70"/>
+    <!-- row 3 -->
+    <circle cx="32" cy="158" r="3" fill="#9f8fef"/>
+    <rect x="44" y="154" width="32" height="8" fill="#f5c542"/>
+    <rect x="80" y="154" width="120" height="8" fill="#c0caf5" fill-opacity="0.70"/>
+  </g>
+</g>
+
+<!-- APRENDER PRESENTAR + PROBAR PLATFORM STRIP (carried over) -->
 <g id="platform">
   <rect x="80" y="535" width="1040" height="36" rx="6" fill="#1a1d23" stroke="#ffab00" stroke-width="3"/>
   <rect x="80" y="535" width="1040" height="36" rx="6" fill="url(#platform-grad)"/>
-  <!-- presentar icon -->
+  <!-- presentar icon (left): 3 stacked content bars in a frame -->
   <g transform="translate(120, 538)">
     <rect x="0" y="3" width="26" height="26" rx="3" fill="none" stroke="#0d1117" stroke-width="3"/>
     <rect x="3" y="6" width="20" height="6" fill="#0d1117"/>
@@ -175,7 +315,7 @@
   <circle cx="380" cy="553" r="4" fill="#0d1117"/>
   <circle cx="600" cy="553" r="4" fill="#0d1117"/>
   <circle cx="820" cy="553" r="4" fill="#0d1117"/>
-  <!-- probar icon -->
+  <!-- probar icon (right): two stacked frames with a checkmark -->
   <g transform="translate(1054, 538)">
     <rect x="0" y="3" width="22" height="22" rx="3" fill="#0d1117" fill-opacity="0.4" stroke="#0d1117" stroke-width="3"/>
     <rect x="10" y="13" width="22" height="22" rx="3" fill="#0d1117" fill-opacity="0.7" stroke="#0d1117" stroke-width="3"/>
