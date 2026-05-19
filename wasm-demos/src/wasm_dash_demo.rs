@@ -49,9 +49,9 @@ fn paint(ctx: &web_sys::CanvasRenderingContext2d, w: f64, h: f64, dash: &Dashboa
 
     // Walk the same paint list build_paint_list produces and render
     for cmd in build_paint_list(dash) {
-        let r = (cmd.fg.r.clamp(0.0, 1.0) as f64);
-        let g = (cmd.fg.g.clamp(0.0, 1.0) as f64);
-        let b = (cmd.fg.b.clamp(0.0, 1.0) as f64);
+        let r = cmd.fg.r.clamp(0.0, 1.0) as f64;
+        let g = cmd.fg.g.clamp(0.0, 1.0) as f64;
+        let b = cmd.fg.b.clamp(0.0, 1.0) as f64;
         // background
         ctx.set_fill_style_str("#161b22");
         ctx.fill_rect(cmd.bounds.x, cmd.bounds.y, cmd.bounds.w, cmd.bounds.h);
