@@ -222,7 +222,11 @@ mod browser {
             ctx.set_font("14px monospace");
             ctx.fill_text(&cmd.label, cmd.bounds.x + 8.0, cmd.bounds.y + 18.0)?;
             let fill_pct = format!("{:.0}%", cmd.fill * 100.0);
-            ctx.fill_text(&fill_pct, cmd.bounds.x + 8.0, cmd.bounds.y + cmd.bounds.h - 8.0)?;
+            ctx.fill_text(
+                &fill_pct,
+                cmd.bounds.x + 8.0,
+                cmd.bounds.y + cmd.bounds.h - 8.0,
+            )?;
         }
         Ok(())
     }
