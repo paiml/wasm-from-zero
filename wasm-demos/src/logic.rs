@@ -825,130 +825,55 @@ pub mod wasm_dash {
 }
 
 pub mod shell {
-    pub const SUGGESTIONS: &[(&str, &[&str])] = &[
-        ("g", &["git status", "git push", "git commit -am"]),
-        ("gi", &["git status", "git push", "git commit -am"]),
-        ("git", &["git status", "git push", "git commit -am"]),
-        ("git ", &["git status", "git push", "git commit -am"]),
-        ("git s", &["git status", "git stash", "git show HEAD"]),
-        (
-            "git p",
-            &["git push", "git pull", "git push --force-with-lease"],
-        ),
-        ("c", &["cargo build", "cargo test", "cargo run --release"]),
-        ("ca", &["cargo build", "cargo test", "cargo run --release"]),
-        ("car", &["cargo build", "cargo test", "cargo run --release"]),
-        (
-            "cargo",
-            &["cargo build", "cargo test", "cargo run --release"],
-        ),
-        (
-            "cargo ",
-            &["cargo build", "cargo test", "cargo run --release"],
-        ),
-        (
-            "cargo b",
-            &[
-                "cargo build",
-                "cargo build --release",
-                "cargo build --target wasm32-unknown-unknown",
-            ],
-        ),
-        (
-            "cargo t",
-            &[
-                "cargo test",
-                "cargo test --workspace",
-                "cargo test -p m5-dash",
-            ],
-        ),
-        (
-            "d",
-            &["docker ps", "docker run -it ubuntu", "docker compose up"],
-        ),
-        (
-            "doc",
-            &["docker ps", "docker run -it ubuntu", "docker compose up"],
-        ),
-        (
-            "docker",
-            &["docker ps", "docker run -it ubuntu", "docker compose up"],
-        ),
-        (
-            "docker ",
-            &["docker ps", "docker run -it ubuntu", "docker compose up"],
-        ),
-        (
-            "k",
-            &[
-                "kubectl get pods",
-                "kubectl logs -f",
-                "kubectl describe pod",
-            ],
-        ),
-        (
-            "kub",
-            &[
-                "kubectl get pods",
-                "kubectl logs -f",
-                "kubectl describe pod",
-            ],
-        ),
-        ("ls", &["ls -la", "ls -lah --color", "ls -1"]),
-        ("m", &["make demo", "make serve", "make wasm"]),
-        ("mak", &["make demo", "make serve", "make wasm"]),
-        ("make", &["make demo", "make serve", "make wasm"]),
-        ("make ", &["make demo", "make serve", "make wasm"]),
-        (
-            "python",
-            &[
-                "python3 -m http.server",
-                "python -m pytest",
-                "python -m venv .venv",
-            ],
-        ),
-        (
-            "ssh",
-            &["ssh dev", "ssh -i ~/.ssh/key host", "ssh host -p 22"],
-        ),
-    ];
+    //! Thin wrapper around the real `aprender-shell` Markov model.
+    //!
+    //! Demo 6 used to ship a hand-curated `&[(prefix, top-3)]` const dict.
+    //! It now loads the *real* trained 3-gram model (`aprender-shell-base.apr`,
+    //! SHA256 `068ac67a…3974`) byte-for-byte identical to what
+    //! interactive.paiml.com/shell-ml serves. Same `.apr` file, same
+    //! `ShellAutocomplete::load_from_bytes` path that the production page
+    //! uses — only difference is that the bytes are baked in via
+    //! `include_bytes!` instead of fetched at runtime, because this
+    //! wasm-demos crate ships one synchronous canvas-paint bundle for
+    //! all nine demos.
+    use crate::shell_model::ShellAutocomplete;
+    use std::sync::OnceLock;
+
+    const MODEL_BYTES: &[u8] = include_bytes!("../assets/aprender-shell-base.apr");
+
+    /// Panel row count — the canvas paints exactly three suggestion rows
+    /// at fixed y-offsets, so we clamp the model's output to top-3.
+    pub const TOP_K: usize = 3;
+
+    fn model() -> Option<&'static ShellAutocomplete> {
+        static MODEL: OnceLock<Option<ShellAutocomplete>> = OnceLock::new();
+        MODEL
+            .get_or_init(|| ShellAutocomplete::load_from_bytes(MODEL_BYTES).ok())
+            .as_ref()
+    }
 
     /// BUG #13 fix (gist round 2): the previous longest-prefix lookup
-    /// matched on the input's leading characters regardless of whether
-    /// the rest of the buffer was still a prefix of any actual command.
-    /// E.g. `madocker ps` still returned `make demo/serve/wasm` because
-    /// `m` was a dict prefix and nothing checked whether `madocker ps`
-    /// is mid-typing any of those suggestions.
+    /// over a hand-curated dict matched on the input's leading chars
+    /// regardless of whether the buffer was still a prefix of any real
+    /// command. The real Markov model's trie has the same property by
+    /// construction — `madocker ps` is a prefix of no trained command,
+    /// so the trie walk in `ShellAutocomplete::suggest` returns nothing.
+    /// We forward to the model and pass through the empty result.
     ///
-    /// New shape: find the longest dict prefix that matches AND has at
-    /// least one suggestion of which the full input is itself a prefix
-    /// (i.e. the user is mid-typing it). Filter to those matching
-    /// suggestions so the panel cleanly empties when the buffer goes
-    /// off-script.
-    pub fn lookup(prefix: &str) -> Vec<&'static str> {
+    /// Empty input stays empty (rather than the model's "top by
+    /// frequency" fallback) so the canvas shows its "(no model match
+    /// — try: g · cargo · docker · make · python)" placeholder.
+    pub fn lookup(prefix: &str) -> Vec<String> {
         if prefix.is_empty() {
             return vec![];
         }
-        let mut best: Vec<&'static str> = vec![];
-        let mut best_len = 0;
-        for (p, sugs) in SUGGESTIONS {
-            if !prefix.starts_with(*p) {
-                continue;
-            }
-            if p.len() < best_len {
-                continue;
-            }
-            let filtered: Vec<&'static str> = sugs
-                .iter()
-                .copied()
-                .filter(|s| s.starts_with(prefix))
-                .collect();
-            if !filtered.is_empty() {
-                best = filtered;
-                best_len = p.len();
-            }
-        }
-        best
+        let Some(m) = model() else {
+            return vec![];
+        };
+        m.suggest(prefix, TOP_K)
+            .into_iter()
+            .map(|(text, _score)| text)
+            .collect()
     }
 
     /// BUG #12 helper: keep the canvas-painted "input" buffer honest by

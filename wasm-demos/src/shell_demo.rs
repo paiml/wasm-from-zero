@@ -1,10 +1,12 @@
 //! Demo 6 — Shell ML autocomplete (pure-presentar port).
 //!
 //! The interactive.paiml.com /shell-ml demo, rebuilt as a canvas-painted
-//! UI instead of CSS+HTML. A tiny embedded Markov model (compiled in
-//! as a const dictionary — the real `aprender-shell` Markov model loads
-//! from `.apr` on native, but we keep it dependency-free here) suggests
-//! top-K completions as the user types. Every glyph painted via Rust.
+//! UI instead of CSS+HTML. Loads the *real* trained `aprender-shell-base.apr`
+//! 3-gram Markov model (byte-for-byte identical to what production serves)
+//! via `presentar::browser::ShellAutocomplete::load_from_bytes` — same loader
+//! path the production page uses, with the `.apr` bytes baked in via
+//! `include_bytes!` since this wasm bundle paints synchronously.
+//! Every glyph painted via Rust.
 
 use crate::canvas_helpers::{get_canvas_ctx, rgb};
 use crate::logic::shell::{lookup, should_ignore_modifier_key};
@@ -16,7 +18,7 @@ use wasm_bindgen::JsCast;
 #[derive(Clone)]
 struct ShellState {
     input: String,
-    suggestions: Vec<&'static str>,
+    suggestions: Vec<String>,
     blink: bool,
 }
 
@@ -158,7 +160,7 @@ pub fn mount_shell(canvas_id: &str) -> Result<(), JsValue> {
             }
             "Enter" => {
                 if let Some(first) = s.suggestions.first() {
-                    s.input = (*first).to_string();
+                    s.input = first.clone();
                 }
             }
             "Escape" => {
