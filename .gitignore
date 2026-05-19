@@ -16,3 +16,4 @@ dist/
 
 # Browser-bundle output of `make serve` / `make wasm-bundle`
 m5-dash/web/pkg/
+wasm-demos/web/pkg/

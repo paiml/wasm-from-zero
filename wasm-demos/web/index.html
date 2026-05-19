@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>wasm-from-zero · demo gallery</title>
+  <style>
+    body { margin: 0; background: #0d1117; color: #c9d1d9; font-family: system-ui, sans-serif; min-height: 100vh; padding: 40px 20px; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    h1 { color: #a5d6ff; font-weight: 400; letter-spacing: 0.04em; margin-bottom: 8px; }
+    p.lead { color: #565f89; margin-bottom: 36px; font-size: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    a.card { display: block; background: #161b22; border: 2px solid #30363d; border-radius: 10px; padding: 24px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s; }
+    a.card:hover { border-color: #7c3aed; transform: translateY(-2px); }
+    a.card h2 { color: #c9d1d9; margin: 0 0 8px; font-size: 18px; }
+    a.card p { color: #565f89; margin: 0 0 12px; font-size: 13px; line-height: 1.5; }
+    a.card .tags { color: #7aa2f7; font-family: monospace; font-size: 11px; }
+    a.card .num { color: #7c3aed; font-family: monospace; font-size: 12px; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
+    .footer { color: #565f89; font-size: 12px; margin-top: 48px; text-align: center; }
+    code { color: #ffab00; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>wasm-from-zero · demo gallery</h1>
+    <p class="lead">Six working WASM apps. Same crate set (<code>m1-canvas</code>, <code>m2-elm-wasm</code>, <code>m3-components</code>, <code>m3-charts</code>, <code>m5-dash</code>), six visual proofs. Zero hand-written JavaScript — every <code>&lt;canvas&gt;</code> pixel comes from compiled Rust via <code>wasm-bindgen</code>.</p>
+    <div class="grid">
+      <a class="card" href="canvas/">
+        <span class="num">DEMO 1 · M1 Canvas</span>
+        <h2>Canvas2D primitives</h2>
+        <p>m1-canvas::clip survives 8 adversarial inputs — NaN, Inf, oversize, negative, off-screen. Shows which rects make it past the contract.</p>
+        <span class="tags">wasm-rendering-v1</span>
+      </a>
+      <a class="card" href="counter/">
+        <span class="num">DEMO 2 · M2 Elm</span>
+        <h2>Elm counter</h2>
+        <p>init / update / view in WASM. Click [+], [−], or [reset] — every Msg flows through update() in Rust, view() repaints.</p>
+        <span class="tags">wasm-lifecycle-v1</span>
+      </a>
+      <a class="card" href="process-table/">
+        <span class="num">DEMO 3 · M3 Components</span>
+        <h2>Sortable process table</h2>
+        <p>12 processes, sparkline per row built from m3-charts::position, click column headers to re-sort. layout() + non-overlap proof.</p>
+        <span class="tags">wasm-panels-v1</span>
+      </a>
+      <a class="card" href="showcase/">
+        <span class="num">DEMO 4 · 60Hz</span>
+        <h2>Animated showcase</h2>
+        <p>Bar chart · rotating donut · particle system · 16-dim softmax. All driven by an LCG, all painted from Rust at 60 frames per second.</p>
+        <span class="tags">requestAnimationFrame loop</span>
+      </a>
+      <a class="card" href="wasm-dash/">
+        <span class="num">DEMO 5 · capstone</span>
+        <h2>wasm-dash live</h2>
+        <p>The m5-dash capstone, animated. Same build_paint_list(Dashboard::fixture()) the native demo prints, now jittered at 30Hz on canvas.</p>
+        <span class="tags">m5-dash composition</span>
+      </a>
+      <a class="card" href="shell/">
+        <span class="num">DEMO 6 · aprender-shell</span>
+        <h2>Shell ML autocomplete</h2>
+        <p>The interactive.paiml.com /shell-ml demo, rebuilt as pure presentar — every glyph painted, no CSS DOM. Type to see top-3 completions.</p>
+        <span class="tags">aprender-shell Markov</span>
+      </a>
+    </div>
+    <p class="footer">Built with <code>cargo build --target wasm32-unknown-unknown</code> + <code>wasm-bindgen --target web</code>. Served with <code>python3 -m http.server</code>. No bundler, no <code>node_modules/</code>.</p>
+  </div>
+</body>
+</html>
