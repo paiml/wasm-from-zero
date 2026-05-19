@@ -13,6 +13,13 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 presentar-core = { package = "aprender-present-core", version = "0.33" }
+# Vendored from presentar::browser::shell_autocomplete (aprender-present-lib 0.34) —
+# the published umbrella crate has a broken include_bytes! in showcase.rs that hits
+# wasm builds (see the same workaround in m5-dash/Cargo.toml). Same .apr file,
+# same loader path, same model.
+bincode = "1.3"
+serde = { version = "1", features = ["derive"] }
+ruzstd = "0.7"
 m1-canvas = { path = "../m1-canvas" }
 m2-elm-wasm = { path = "../m2-elm-wasm" }
 m3-components = { path = "../m3-components" }

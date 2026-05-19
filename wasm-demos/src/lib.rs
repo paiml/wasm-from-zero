@@ -8,6 +8,10 @@
 // Pure logic — testable on native via probar snapshots.
 pub mod logic;
 
+// Real aprender-shell Markov model loader (vendored from
+// presentar::browser::shell_autocomplete) — see `shell_model.rs` for why.
+pub mod shell_model;
+
 #[cfg(target_arch = "wasm32")]
 mod canvas_demo;
 #[cfg(target_arch = "wasm32")]
