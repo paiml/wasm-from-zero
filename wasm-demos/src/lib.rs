@@ -5,6 +5,9 @@
 //! teaches. Zero hand-written JavaScript — `wasm-bindgen` emits the
 //! ES-module loader.
 
+// Pure logic — testable on native via probar snapshots.
+pub mod logic;
+
 #[cfg(target_arch = "wasm32")]
 mod canvas_demo;
 #[cfg(target_arch = "wasm32")]

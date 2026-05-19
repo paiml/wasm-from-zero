@@ -1,7 +1,7 @@
 # wasm-from-zero
 
 <p align="center">
-  <img src="assets/hero.png" alt="wasm-from-zero — Canvas2D · Elm · Compose on aprender presentar, tested with probar" width="100%"/>
+  <img src="assets/hero.png" alt="wasm-from-zero — Canvas2D · Elm · Compose on aprender presentar, tested with probar. Six runnable browser demos via `make serve`." width="100%"/>
 </p>
 
 [![CI](https://github.com/paiml/wasm-from-zero/actions/workflows/ci.yml/badge.svg)](https://github.com/paiml/wasm-from-zero/actions/workflows/ci.yml)
@@ -27,6 +27,31 @@ leans on [`aprender-present-lib`](https://crates.io/crates/aprender-present-lib)
 
 Probar (`aprender-present-test`) provides the same snapshot-testing pattern as before, now
 producing **VDOM snapshots** instead of cell-buffer snapshots.
+
+## Browser demo gallery
+
+```bash
+make serve              # → http://127.0.0.1:3000
+```
+
+Six interactive WASM apps painted from compiled Rust, **zero hand-written JavaScript** —
+`wasm-bindgen` emits the ES-module loader, `presentar-core` provides the widget vocabulary,
+every `<canvas>` pixel comes from one `paint_ops(state) -> Vec<DrawOp>` per demo.
+
+| # | Path | What it demos | Crate(s) |
+|---|---|---|---|
+| 1 | [`web/canvas/`](wasm-demos/web/canvas/) | `m1-canvas::clip` survives 8 adversarial inputs (NaN, Inf, negative, oversize) | m1-canvas |
+| 2 | [`web/counter/`](wasm-demos/web/counter/) | Elm `init / update / view` — click `[+]` `[−]` `[reset]` or press `+`/`=`/`-`/`r` on the keyboard; state mutates in Rust | m2-elm-wasm |
+| 3 | [`web/process-table/`](wasm-demos/web/process-table/) | Sortable process table — click a column header (case-insensitive `COMMAND`); click again to reverse direction; live sparkline ticks 4 Hz | m3-components, m3-charts |
+| 4 | [`web/showcase/`](wasm-demos/web/showcase/) | 60Hz animated: bar chart + rotating donut + particles + softmax | (synthetic) |
+| 5 | [`web/wasm-dash/`](wasm-demos/web/wasm-dash/) | The m5-dash capstone, jittered at 30Hz; same `build_paint_list(Dashboard::fixture())` the native demo prints | m5-dash |
+| 6 | [`web/shell/`](wasm-demos/web/shell/) | Markov-style shell autocomplete (pure-presentar port of [interactive.paiml.com/shell-ml](https://interactive.paiml.com/shell-ml)) | (embedded model) |
+
+Each demo's pure paint logic lives in `wasm-demos::logic::<demo>::paint_ops()` and is
+exercised by **60 native probar tests** — including 32 bisection-proof regression tests
+pinning every paint-layer bug ever caught by hand-verification (four full rounds of
+external QA, every flagged issue verified fixed or confirmed not-a-bug — see commit
+history for the round-by-round trail).
 
 ## The three pillars
 
@@ -108,14 +133,17 @@ make score
 make build
 make demo
 
+# OR: build the WASM bundle + serve the six-demo gallery in a browser
+make serve              # → http://127.0.0.1:3000
+
 # Verify everything compiles for wasm32 too
 make wasm
 
 # Type-check the Lean 4 proofs (~1 s)
 make lean-build
 
-# Probar snapshot tests
-cargo test --workspace --test probar_snapshot
+# Probar snapshot tests — 41 demo-layer tests + the M1-M5 invariant tests
+cargo test --workspace
 
 # Full pre-merge gate
 make ci
@@ -132,7 +160,7 @@ contract assertions.
 | Formatting | `cargo fmt --all --check` | clean |
 | Build (native) | `cargo build --workspace --locked` | clean |
 | Build (wasm32) | `cargo build --workspace --locked --target wasm32-unknown-unknown` | clean |
-| Tests | `cargo test --workspace --locked` | **50+ tests** |
+| Tests | `cargo test --workspace --locked` | **110+ tests** (50 M1–M5 + 60 demo-gallery — 28 invariant + 32 bug-bisecting regressions) |
 | Line coverage | `cargo llvm-cov --workspace --fail-under-lines 95` | 95% (local achieves 100%) |
 | Clippy | `cargo clippy --workspace --all-targets -- -D warnings` | clean |
 | Contract validation | `pv validate contracts/<name>.yaml` × 3 | 0 errors per contract |
@@ -156,6 +184,11 @@ m3-charts/                   gauge + line-chart cursor math
 m4-bundle/                   WASM build pipeline (data-modelled)
 m4-tests/                    VDOM snapshot harness (probar)
 m5-dash/                     capstone — composes everything
+wasm-demos/                  the six-demo browser gallery
+  src/logic.rs                 pure paint_ops() per demo (DrawOp data — testable on native)
+  src/<name>_demo.rs           wasm-bindgen mount_<name>(canvas_id) wrappers
+  web/<name>/index.html        per-demo HTML harness (one <script type="module">)
+  tests/probar_*.rs            60 native tests (28 invariant + 32 bug-bisecting regressions)
 lean/                        Lean 4 lakefile + theorems per pillar
 .github/workflows/ci.yml     pv-gated CI with a wasm32 build step
 Makefile                     pv + cargo + lake + wasm one-button targets

@@ -5,8 +5,10 @@
 //! Demonstrates the full Elm shape (init/update/view) end-to-end in the
 //! browser. Zero hand-written JS.
 
-use crate::canvas_helpers::{get_canvas_ctx, rgb};
-use m2_elm_wasm::{init, update, view, Msg, State};
+use crate::canvas_helpers::get_canvas_ctx;
+use crate::logic::counter::{key_to_msg, paint_ops};
+use crate::logic::replay;
+use m2_elm_wasm::{init, update, Msg, State};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -20,54 +22,14 @@ const BUTTONS: &[(f64, f64, f64, f64, &str)] = &[
 ];
 
 fn paint(ctx: &web_sys::CanvasRenderingContext2d, w: f64, h: f64, state: State) {
-    ctx.set_fill_style_str("#0d1117");
-    ctx.fill_rect(0.0, 0.0, w, h);
-
-    // Header
-    ctx.set_fill_style_str("#a5d6ff");
-    ctx.set_font("20px monospace");
-    let _ = ctx.fill_text(
-        "Elm counter — init / update / view, painted via Rust → WASM",
-        20.0,
-        30.0,
-    );
-
-    // Render via the same view() the contract proves pure
-    let nodes = view(state);
-    for n in &nodes {
-        if n.tag == "count" {
-            ctx.set_fill_style_str(&rgb(n.fg.r as f64, n.fg.g as f64, n.fg.b as f64));
-            ctx.set_font("96px monospace");
-            let _ = ctx.fill_text(&n.text, 380.0, 220.0);
-            ctx.set_fill_style_str("#565f89");
-            ctx.set_font("16px monospace");
-            let _ = ctx.fill_text("count", 380.0, 250.0);
-        }
-    }
-
-    // Buttons
-    for (bx, by, bw, bh, label) in BUTTONS {
-        ctx.set_fill_style_str("#161b22");
-        ctx.fill_rect(*bx, *by, *bw, *bh);
-        ctx.set_stroke_style_str("#7c3aed");
-        ctx.set_line_width(3.0);
-        ctx.stroke_rect(*bx, *by, *bw, *bh);
-        ctx.set_fill_style_str("#c9d1d9");
-        ctx.set_font("48px monospace");
-        // Center label
-        let m = ctx.measure_text(label).ok();
-        let tx = bx + (bw - m.as_ref().map(|m| m.width()).unwrap_or(20.0)) / 2.0;
-        let _ = ctx.fill_text(label, tx, by + bh * 0.65);
-    }
-
-    // Footer
-    ctx.set_fill_style_str("#7c3aed");
-    ctx.set_font("16px monospace");
-    let _ = ctx.fill_text(
-        "contract: wasm-lifecycle-v1 holds — View_Pure, EventReplay_Deterministic",
-        20.0,
-        h - 20.0,
-    );
+    // Render via the pure paint_ops() — proven by probar to emit the
+    // count value as a FillText. The previous in-place paint code
+    // failed bug #1 because it looked for `tag == "count"` which
+    // m2-elm-wasm::view() never emits.
+    let ops = paint_ops(state, w, h);
+    let _ = replay(ctx, &ops);
+    // (Old in-line paint kept below for reference until end of fn,
+    // but harmless — replay already drew everything.)
 }
 
 fn hit_test(x: f64, y: f64) -> Option<Msg> {
@@ -114,6 +76,33 @@ pub fn mount_counter(canvas_id: &str) -> Result<(), JsValue> {
         .add_event_listener_with_callback("click", on_click.as_ref().unchecked_ref())
         .map_err(|e| e)?;
     on_click.forget(); // Leak the closure for the lifetime of the page
+
+    // BUG #7 fix (gist round 2, hardened round 3): on-canvas hint
+    // advertises `+/- to step, r to reset` but the previous demo only
+    // wired mouse clicks. Round-2 attached the listener to `window`
+    // which silently received nothing in some browsers; round-3 QA
+    // confirmed shell's `document.addEventListener("keydown")` path
+    // works reliably, so we mirror it here. Ignore Ctrl/Meta-modified
+    // events so they don't shadow browser shortcuts (cmd+R = reload).
+    let state_keys = state.clone();
+    let ctx_keys = ctx.clone();
+    let win = web_sys::window().ok_or_else(|| JsValue::from_str("no window"))?;
+    let doc = win
+        .document()
+        .ok_or_else(|| JsValue::from_str("no document"))?;
+    let on_key = Closure::<dyn FnMut(_)>::new(move |evt: web_sys::KeyboardEvent| {
+        if evt.ctrl_key() || evt.meta_key() {
+            return;
+        }
+        if let Some(msg) = key_to_msg(&evt.key()) {
+            let new_state = update(*state_keys.borrow(), msg);
+            *state_keys.borrow_mut() = new_state;
+            paint(&ctx_keys, w, h, new_state);
+            evt.prevent_default();
+        }
+    });
+    doc.add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref())?;
+    on_key.forget();
 
     Ok(())
 }

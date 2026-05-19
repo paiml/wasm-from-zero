@@ -47,33 +47,110 @@ fn paint(ctx: &web_sys::CanvasRenderingContext2d, w: f64, h: f64, dash: &Dashboa
         56.0,
     );
 
-    // Walk the same paint list build_paint_list produces and render
+    // Walk the same paint list build_paint_list produces and render.
+    // BUG FIX (gist): build_paint_list emits 3 HEADER nodes (`title`,
+    // `event-pulse`, `mem-gauge`) at the top with fill=0.0 — those are
+    // placeholders; we special-case them to show the actual title /
+    // event-count / mem percentage so the dashboard reads as a
+    // dashboard, not as three empty cells stamped "0%".
     for cmd in build_paint_list(dash) {
-        let r = (cmd.fg.r.clamp(0.0, 1.0) as f64);
-        let g = (cmd.fg.g.clamp(0.0, 1.0) as f64);
-        let b = (cmd.fg.b.clamp(0.0, 1.0) as f64);
+        let r = cmd.fg.r.clamp(0.0, 1.0) as f64;
+        let g = cmd.fg.g.clamp(0.0, 1.0) as f64;
+        let b = cmd.fg.b.clamp(0.0, 1.0) as f64;
         // background
         ctx.set_fill_style_str("#161b22");
         ctx.fill_rect(cmd.bounds.x, cmd.bounds.y, cmd.bounds.w, cmd.bounds.h);
-        // fill
-        let fill_h = cmd.bounds.h * cmd.fill.clamp(0.0, 1.0);
-        ctx.set_fill_style_str(&rgb(r, g, b));
-        ctx.fill_rect(
-            cmd.bounds.x,
-            cmd.bounds.y + cmd.bounds.h - fill_h,
-            cmd.bounds.w,
-            fill_h,
-        );
-        // label
-        ctx.set_fill_style_str("#c9d1d9");
-        ctx.set_font("13px monospace");
-        let _ = ctx.fill_text(&cmd.label, cmd.bounds.x + 6.0, cmd.bounds.y + 16.0);
-        ctx.set_font("11px monospace");
-        let _ = ctx.fill_text(
-            &format!("{:.0}%", cmd.fill * 100.0),
-            cmd.bounds.x + 6.0,
-            cmd.bounds.y + cmd.bounds.h - 6.0,
-        );
+
+        match cmd.label.as_str() {
+            "title" => {
+                ctx.set_fill_style_str("#a5d6ff");
+                ctx.set_font("22px monospace");
+                let _ = ctx.fill_text(
+                    "wasm-from-zero · capstone",
+                    cmd.bounds.x + 10.0,
+                    cmd.bounds.y + 36.0,
+                );
+            }
+            "event-pulse" => {
+                ctx.set_fill_style_str(&rgb(0.5, 0.6, 1.0));
+                ctx.set_font("28px monospace");
+                let _ = ctx.fill_text(
+                    &format!("⚡ {}", dash.event_count),
+                    cmd.bounds.x + 10.0,
+                    cmd.bounds.y + 40.0,
+                );
+                ctx.set_fill_style_str("#7c3aed");
+                ctx.set_font("11px monospace");
+                let _ = ctx.fill_text("events", cmd.bounds.x + 10.0, cmd.bounds.y + 54.0);
+            }
+            "mem-gauge" => {
+                let pct = dash.mem_used_gb / dash.mem_total_gb;
+                ctx.set_fill_style_str(&rgb(0.2, 0.85, 0.5));
+                ctx.set_font("28px monospace");
+                let _ = ctx.fill_text(
+                    &format!("{:.0}%", pct * 100.0),
+                    cmd.bounds.x + 10.0,
+                    cmd.bounds.y + 40.0,
+                );
+                ctx.set_fill_style_str("#7c3aed");
+                ctx.set_font("11px monospace");
+                let _ = ctx.fill_text(
+                    &format!("mem · {:.1}/{:.1} GB", dash.mem_used_gb, dash.mem_total_gb),
+                    cmd.bounds.x + 10.0,
+                    cmd.bounds.y + 54.0,
+                );
+            }
+            "mem-bar" => {
+                // BUG #10 fix (gist round 2): mem-bar is a wide
+                // horizontal strip (w=viewport.w, h=40); previously
+                // it fell through to the vertical-fill branch so the
+                // green fill always painted at 100% width regardless
+                // of the gauge percentage. Fill width by gauge.
+                let fill_w = cmd.bounds.w * cmd.fill.clamp(0.0, 1.0);
+                ctx.set_fill_style_str(&rgb(r, g, b));
+                ctx.fill_rect(cmd.bounds.x, cmd.bounds.y, fill_w, cmd.bounds.h);
+                ctx.set_fill_style_str("#c9d1d9");
+                ctx.set_font("13px monospace");
+                let _ = ctx.fill_text(&cmd.label, cmd.bounds.x + 6.0, cmd.bounds.y + 16.0);
+                ctx.set_font("11px monospace");
+                let _ = ctx.fill_text(
+                    &format!("{:.0}%", cmd.fill * 100.0),
+                    cmd.bounds.x + 6.0,
+                    cmd.bounds.y + cmd.bounds.h - 6.0,
+                );
+            }
+            _ => {
+                // CPU bars — fill is the gauge, painted vertically.
+                let fill_h = cmd.bounds.h * cmd.fill.clamp(0.0, 1.0);
+                ctx.set_fill_style_str(&rgb(r, g, b));
+                ctx.fill_rect(
+                    cmd.bounds.x,
+                    cmd.bounds.y + cmd.bounds.h - fill_h,
+                    cmd.bounds.w,
+                    fill_h,
+                );
+                ctx.set_fill_style_str("#c9d1d9");
+                // BUG #11 (gist round 2/3): users reported reading
+                // `cpu-0` as `cpu-8` at 13px. The hyphen-minus at small
+                // font sizes can blend with the `0` glyph's loop.
+                // Rename "cpu-N" → "CPU N" (space separator + caps) +
+                // bump to 14px ui-monospace which has unambiguous digit
+                // glyphs across OS font stacks.
+                let display_label = if let Some(n) = cmd.label.strip_prefix("cpu-") {
+                    format!("CPU {n}")
+                } else {
+                    cmd.label.clone()
+                };
+                ctx.set_font("14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace");
+                let _ = ctx.fill_text(&display_label, cmd.bounds.x + 6.0, cmd.bounds.y + 18.0);
+                ctx.set_font("11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace");
+                let _ = ctx.fill_text(
+                    &format!("{:.0}%", cmd.fill * 100.0),
+                    cmd.bounds.x + 6.0,
+                    cmd.bounds.y + cmd.bounds.h - 6.0,
+                );
+            }
+        }
     }
     let _ = w;
     let _ = h;

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="wasm-from-zero: Canvas2D · Elm cycle · components — built on aprender presentar, tested with probar">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="wasm-from-zero: Canvas2D · Elm cycle · components — built on aprender presentar, tested with probar. Six runnable browser demos via make serve.">
 <!-- GRID PROTOCOL MANIFEST
      Canvas: 1200x600 | text_elements: 0 | role: img
      Zone 1 (0..400):   canvas-grid      (Canvas2D rect draws + clip)

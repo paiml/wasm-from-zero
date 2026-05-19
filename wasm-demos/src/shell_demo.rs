@@ -7,113 +7,11 @@
 //! top-K completions as the user types. Every glyph painted via Rust.
 
 use crate::canvas_helpers::{get_canvas_ctx, rgb};
+use crate::logic::shell::{lookup, should_ignore_modifier_key};
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-
-// Tiny embedded "model" — prefix → top-3 completions, mimicking what
-// aprender-shell's Markov model produces on real shell history.
-const SUGGESTIONS: &[(&str, &[&str])] = &[
-    ("g", &["git status", "git push", "git commit -am"]),
-    ("gi", &["git status", "git push", "git commit -am"]),
-    ("git", &["git status", "git push", "git commit -am"]),
-    ("git ", &["git status", "git push", "git commit -am"]),
-    ("git s", &["git status", "git stash", "git show HEAD"]),
-    (
-        "git p",
-        &["git push", "git pull", "git push --force-with-lease"],
-    ),
-    ("c", &["cargo build", "cargo test", "cargo run --release"]),
-    ("ca", &["cargo build", "cargo test", "cargo run --release"]),
-    ("car", &["cargo build", "cargo test", "cargo run --release"]),
-    (
-        "cargo",
-        &["cargo build", "cargo test", "cargo run --release"],
-    ),
-    (
-        "cargo ",
-        &["cargo build", "cargo test", "cargo run --release"],
-    ),
-    (
-        "cargo b",
-        &[
-            "cargo build",
-            "cargo build --release",
-            "cargo build --target wasm32-unknown-unknown",
-        ],
-    ),
-    (
-        "cargo t",
-        &[
-            "cargo test",
-            "cargo test --workspace",
-            "cargo test -p m5-dash",
-        ],
-    ),
-    (
-        "d",
-        &["docker ps", "docker run -it ubuntu", "docker compose up"],
-    ),
-    (
-        "doc",
-        &["docker ps", "docker run -it ubuntu", "docker compose up"],
-    ),
-    (
-        "docker",
-        &["docker ps", "docker run -it ubuntu", "docker compose up"],
-    ),
-    (
-        "docker ",
-        &["docker ps", "docker run -it ubuntu", "docker compose up"],
-    ),
-    (
-        "k",
-        &[
-            "kubectl get pods",
-            "kubectl logs -f",
-            "kubectl describe pod",
-        ],
-    ),
-    (
-        "kub",
-        &[
-            "kubectl get pods",
-            "kubectl logs -f",
-            "kubectl describe pod",
-        ],
-    ),
-    ("ls", &["ls -la", "ls -lah --color", "ls -1"]),
-    ("m", &["make demo", "make serve", "make wasm"]),
-    ("mak", &["make demo", "make serve", "make wasm"]),
-    ("make", &["make demo", "make serve", "make wasm"]),
-    ("make ", &["make demo", "make serve", "make wasm"]),
-    (
-        "python",
-        &[
-            "python3 -m http.server",
-            "python -m pytest",
-            "python -m venv .venv",
-        ],
-    ),
-    (
-        "ssh",
-        &["ssh dev", "ssh -i ~/.ssh/key host", "ssh host -p 22"],
-    ),
-];
-
-fn lookup(prefix: &str) -> Vec<&'static str> {
-    // Longest-prefix wins
-    let mut best: Option<&[&str]> = None;
-    let mut best_len = 0;
-    for (p, sugs) in SUGGESTIONS {
-        if prefix.starts_with(*p) && p.len() > best_len {
-            best = Some(*sugs);
-            best_len = p.len();
-        }
-    }
-    best.map(|s| s.to_vec()).unwrap_or_default()
-}
 
 #[derive(Clone)]
 struct ShellState {
@@ -245,6 +143,13 @@ pub fn mount_shell(canvas_id: &str) -> Result<(), JsValue> {
     let state_keys = state.clone();
     let ctx_keys = ctx.clone();
     let on_key = Closure::<dyn FnMut(_)>::new(move |evt: web_sys::KeyboardEvent| {
+        // BUG #12 fix (gist round 2): pressing Ctrl/Cmd-modified keys
+        // would have their character payload appended literally to the
+        // buffer (Ctrl+A → input grew by `a`). Drop modifier-tagged
+        // events so the in-canvas "input" doesn't grab browser shortcuts.
+        if should_ignore_modifier_key(evt.ctrl_key(), evt.meta_key()) {
+            return;
+        }
         let key = evt.key();
         let mut s = state_keys.borrow_mut();
         match key.as_str() {
